@@ -53,7 +53,7 @@ public class ClientImpl implements Client {
             log.trace("Error with integration for idClient: " + idClient, e);
             throw new RuntimeException(e);
         }
-        ClientResponse clientResponse = gson.fromJson(bodyResultFinal, ClientResponse.class);
+        ClientResponse clientResponse = this.gson.fromJson(bodyResultFinal, ClientResponse.class);
         log.info("Client successfully found by id: " + clientResponse.getId());
         return clientResponse;
     }

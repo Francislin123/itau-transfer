@@ -6,16 +6,18 @@ import com.transfer.api.transferapi.integration.balance.NotificationBacen;
 import com.transfer.api.transferapi.integration.balance.request.NotificationBacenRequest;
 import com.transfer.api.transferapi.integration.client.Client;
 import com.transfer.api.transferapi.integration.client.response.ClientResponse;
-import com.transfer.api.transferapi.controller.TransferResponseDTO;
+import com.transfer.api.transferapi.controller.response.TransferResponseDTO;
 import com.transfer.api.transferapi.controller.request.TransferRequestDTO;
 import com.transfer.api.transferapi.integration.transfer.TransferClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import static com.transfer.api.transferapi.util.CheckTransfer.checkTransfer;
+
 @Service
 @Slf4j
-public class TransferImpl implements Transfer {
+public class TransferServiceFacade implements TransferFacade {
 
     @Autowired
     private Client client;
@@ -34,28 +36,29 @@ public class TransferImpl implements Transfer {
 
         log.info("init to makeTransfer method");
 
-        final ClientResponse clientResponse = client.validateIfTheClientExists(transferRequestDTO.getIdCliente());
+        final ClientResponse clientResponse = this.client.validateIfTheClientExists(transferRequestDTO.getIdCliente());
 
         if (clientResponse.getId() == null) {
             return TransferResponseDTO.builder().build();
         }
 
         final AccountOriginResponse accountOriginResponse =
-                account.searchSourceAccountData(transferRequestDTO.getConta().getIdOrigem());
+                this.account.searchSourceAccountData(transferRequestDTO.getConta().getIdOrigem());
 
         if (accountOriginResponse.getId() == null) {
             return TransferResponseDTO.builder().build();
         }
 
-        boolean checkTransfer = checkTransfer(accountOriginResponse.getLimiteDiario(), transferRequestDTO.getValor());
+        final boolean checkTransfer =
+                checkTransfer(accountOriginResponse.getLimiteDiario(), transferRequestDTO.getValor());
 
         if (checkTransfer
                 && accountOriginResponse.isAtivo()
                 && accountOriginResponse.getSaldo() > transferRequestDTO.getValor()) {
 
-            String idTransfer = transferClient.transferClientSend(transferRequestDTO);
+            String idTransfer = this.transferClient.transferClientSend(transferRequestDTO);
 
-            notificationBacen.notificationBacen(NotificationBacenRequest.builder()
+            this.notificationBacen.notificationBacen(NotificationBacenRequest.builder()
                     .valor(transferRequestDTO.getValor())
                     .conta(transferRequestDTO.getConta())
                     .build());
@@ -65,9 +68,5 @@ public class TransferImpl implements Transfer {
         } else {
             return TransferResponseDTO.builder().valor(accountOriginResponse.getLimiteDiario()).build();
         }
-    }
-
-    private boolean checkTransfer(double dailyCustomerLimit, double transferValue) {
-        return !(dailyCustomerLimit <= 0) && !(dailyCustomerLimit < transferValue);
     }
 }

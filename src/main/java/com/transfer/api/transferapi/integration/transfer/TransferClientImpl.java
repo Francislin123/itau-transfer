@@ -1,7 +1,7 @@
 package com.transfer.api.transferapi.integration.transfer;
 
 import com.google.gson.Gson;
-import com.transfer.api.transferapi.controller.TransferResponseDTO;
+import com.transfer.api.transferapi.controller.response.TransferResponseDTO;
 import com.transfer.api.transferapi.controller.request.TransferRequestDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

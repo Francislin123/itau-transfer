@@ -5,22 +5,19 @@
 # Technologies
 
 - Java 17
+- Springframework Boot 3.2.4
 - HttpClient (Integration)
 - Lombok
-- Google gson
-- Springframework Boot 3.2.4
+- Google gson 2.10.1
 - Spring doc open api 2.5.0
+- Design Patterns (Facade Pattern)
 
 ### To run the application just follow the steps below.
 
 - 1 - Enter the folder where the project jar is
 - 2 - Execute the following command by cmd
+- 3 - java -jar transfer-api-0.0.1-SNAPSHOT.jar --spring.config.location = file: C: /Config/application.yml
 
-- java -jar transfer-api-0.0.1-SNAPSHOT.jar --spring.config.location = file: C: /Config/application.yml
-- OBS: This start command in the application, it finds the configurations of the configuration file of the database
-- among other configurations (application.yml)
-- -Dspring.profiles.active=local
-
-### Documentation for testing api
+### Documentation for testing api (Swagger)
 
 - http://localhost:8077/api/v1/swagger-ui/index.html#/

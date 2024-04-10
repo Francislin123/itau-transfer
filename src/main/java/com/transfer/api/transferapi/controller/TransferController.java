@@ -1,7 +1,8 @@
 package com.transfer.api.transferapi.controller;
 
 import com.transfer.api.transferapi.controller.request.TransferRequestDTO;
-import com.transfer.api.transferapi.impl.Transfer;
+import com.transfer.api.transferapi.controller.response.TransferResponseDTO;
+import com.transfer.api.transferapi.impl.TransferFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +17,7 @@ public class TransferController {
     public static final String URI_TRANSFER = "/transfer";
 
     @Autowired
-    private Transfer transfer;
+    private TransferFacade transfer;
 
     @PostMapping
     public ResponseEntity<TransferResponseDTO> makeTransfer(@RequestBody TransferRequestDTO transferRequestDTO) {

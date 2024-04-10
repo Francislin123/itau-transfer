@@ -51,7 +51,7 @@ public class AccountImpl implements Account {
             throw new RuntimeException(e);
         }
 
-        AccountOriginResponse accountOriginResponse = gson.fromJson(bodyResultFinal, AccountOriginResponse.class);
+        AccountOriginResponse accountOriginResponse = this.gson.fromJson(bodyResultFinal, AccountOriginResponse.class);
         log.info("Account origin successfully found by id: " + accountOriginResponse.getId());
         return accountOriginResponse;
     }

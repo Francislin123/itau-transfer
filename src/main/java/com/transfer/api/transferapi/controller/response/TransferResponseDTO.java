@@ -1,4 +1,4 @@
-package com.transfer.api.transferapi.controller;
+package com.transfer.api.transferapi.controller.response;
 
 import lombok.Builder;
 import lombok.Getter;
