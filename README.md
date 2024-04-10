@@ -8,7 +8,8 @@
 - HttpClient (Integration)
 - Lombok
 - Google gson
-- Springframework Boot 3.2.2
+- Springframework Boot 3.2.4
+- Spring doc open api 2.5.0
 
 ### To run the application just follow the steps below.
 
@@ -21,3 +22,5 @@
 - -Dspring.profiles.active=local
 
 ### Documentation for testing api
+
+- http://localhost:8077/api/v1/swagger-ui/index.html#/
