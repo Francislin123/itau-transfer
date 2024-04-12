@@ -8,7 +8,7 @@
 - Lombok;
 - Google gson 2.10.1;
 - Spring doc open api 2.5.0;
-- Design Patterns (Facade Pattern/Builder);
+- Design Patterns (Facade/Builder);
 - AWS (API Gateway, Elastic Load Balancing (ELB), EC2 Auto Scaling e CloudWatch);
 
 ### To run the application just follow the steps below.
