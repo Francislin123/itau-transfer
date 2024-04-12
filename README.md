@@ -27,3 +27,6 @@
 - EC2 Auto Scaling: Dimensiona automaticamente a capacidade de computação EC2 com base na demanda. Garante que o número correto de instâncias EC2 esteja em execução para lidar com a carga de trabalho atual.
 - CloudWatch: Utilizado para monitorar a saúde e o desempenho da infraestrutura AWS. Coleta métricas, logs e eventos que podem ser usados para tomar decisões informadas sobre a escalabilidade e o desempenho da aplicação.
 
+### Architecture about
+
+- Essa arquitetura fornece uma solução altamente escalável e resiliente, capaz de lidar com cargas de trabalho variáveis ​​e garantir alta disponibilidade. Além disso, o uso do CloudWatch permite uma monitoração proativa da saúde e do desempenho da aplicação, permitindo a tomada de decisões informadas sobre ajustes na infraestrutura.
