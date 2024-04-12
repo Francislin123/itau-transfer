@@ -21,3 +21,7 @@
 ### Documentation for testing api (Swagger)
 
 - http://localhost:8077/api/v1/swagger-ui/index.html#/
+
+### Aws Solution Architecture
+![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1712892067/l84vma0nozvuoidlshzg.png)
+
