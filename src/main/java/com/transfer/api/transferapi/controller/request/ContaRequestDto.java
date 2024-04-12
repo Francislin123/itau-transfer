@@ -1,5 +1,6 @@
 package com.transfer.api.transferapi.controller.request;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,4 +9,10 @@ import lombok.Setter;
 public class ContaRequestDto {
     private String idOrigem;
     private String idDestino;
+
+    @Builder
+    public ContaRequestDto(String idOrigem, String idDestino) {
+        this.idOrigem = idOrigem;
+        this.idDestino = idDestino;
+    }
 }

@@ -1,23 +1,22 @@
-package com.transfer.api.transferapi.impl;
+package com.transfer.api.transferapi.facade;
 
+import com.transfer.api.transferapi.controller.request.TransferRequestDTO;
+import com.transfer.api.transferapi.controller.response.TransferResponseDTO;
 import com.transfer.api.transferapi.integration.account.Account;
 import com.transfer.api.transferapi.integration.account.response.AccountOriginResponse;
 import com.transfer.api.transferapi.integration.balance.NotificationBacen;
 import com.transfer.api.transferapi.integration.balance.request.NotificationBacenRequest;
 import com.transfer.api.transferapi.integration.client.Client;
 import com.transfer.api.transferapi.integration.client.response.ClientResponse;
-import com.transfer.api.transferapi.controller.response.TransferResponseDTO;
-import com.transfer.api.transferapi.controller.request.TransferRequestDTO;
 import com.transfer.api.transferapi.integration.transfer.TransferClient;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import static com.transfer.api.transferapi.util.CheckTransfer.checkTransfer;
+import static com.transfer.api.transferapi.util.CheckTransfer.isaBoolean;
 
 @Service
-@Slf4j
-public class TransferServiceFacade implements TransferFacade {
+public class RolesForValidateTransferImpl implements RolesForValidateTransfer {
 
     @Autowired
     private Client client;
@@ -31,11 +30,7 @@ public class TransferServiceFacade implements TransferFacade {
     @Autowired
     private NotificationBacen notificationBacen;
 
-    @Override
-    public TransferResponseDTO makeTransfer(final TransferRequestDTO transferRequestDTO) {
-
-        log.info("init to makeTransfer method");
-
+    public TransferResponseDTO rolesForValidateTransfer(TransferRequestDTO transferRequestDTO) {
         final ClientResponse clientResponse = this.client.validateIfTheClientExists(transferRequestDTO.getIdCliente());
 
         if (clientResponse.getId() == null) {
@@ -45,16 +40,10 @@ public class TransferServiceFacade implements TransferFacade {
         final AccountOriginResponse accountOriginResponse =
                 this.account.searchSourceAccountData(transferRequestDTO.getConta().getIdOrigem());
 
-        if (accountOriginResponse.getId() == null) {
-            return TransferResponseDTO.builder().build();
-        }
+        final boolean checkTransfer = checkTransfer(
+                accountOriginResponse.getLimiteDiario(), transferRequestDTO.getValor());
 
-        final boolean checkTransfer =
-                checkTransfer(accountOriginResponse.getLimiteDiario(), transferRequestDTO.getValor());
-
-        if (checkTransfer
-                && accountOriginResponse.isAtivo()
-                && accountOriginResponse.getSaldo() > transferRequestDTO.getValor()) {
+        if (isaBoolean(transferRequestDTO, checkTransfer, accountOriginResponse)) {
 
             String idTransfer = this.transferClient.transferClientSend(transferRequestDTO);
 
