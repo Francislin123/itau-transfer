@@ -25,3 +25,8 @@
 ### Aws Solution Architecture
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1712892067/l84vma0nozvuoidlshzg.png)
 
+- API Gateway: Utilizado como ponto de entrada para a aplicação. Recebe as solicitações dos clientes e encaminha para os serviços correspondentes.
+- Elastic Load Balancing (ELB): Distribui o tráfego de entrada entre as instâncias EC2. Garante alta disponibilidade e escalabilidade, distribuindo o tráfego somente para instâncias saudáveis.
+- EC2 Auto Scaling: Dimensiona automaticamente a capacidade de computação EC2 com base na demanda. Garante que o número correto de instâncias EC2 esteja em execução para lidar com a carga de trabalho atual.
+- CloudWatch: Utilizado para monitorar a saúde e o desempenho da infraestrutura AWS. Coleta métricas, logs e eventos que podem ser usados para tomar decisões informadas sobre a escalabilidade e o desempenho da aplicação.
+
