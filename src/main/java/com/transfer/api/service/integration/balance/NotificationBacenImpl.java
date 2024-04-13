@@ -1,7 +1,7 @@
-package com.transfer.api.integration.balance;
+package com.transfer.api.service.integration.balance;
 
 import com.google.gson.Gson;
-import com.transfer.api.integration.balance.request.NotificationBacenRequest;
+import com.transfer.api.service.integration.balance.request.NotificationBacenRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

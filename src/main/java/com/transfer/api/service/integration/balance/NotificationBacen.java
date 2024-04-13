@@ -1,6 +1,6 @@
-package com.transfer.api.integration.balance;
+package com.transfer.api.service.integration.balance;
 
-import com.transfer.api.integration.balance.request.NotificationBacenRequest;
+import com.transfer.api.service.integration.balance.request.NotificationBacenRequest;
 
 @FunctionalInterface
 public interface NotificationBacen {

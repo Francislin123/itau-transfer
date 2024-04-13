@@ -1,4 +1,4 @@
-package com.transfer.api.integration.transfer;
+package com.transfer.api.service.integration.transfer;
 
 import com.google.gson.Gson;
 import com.transfer.api.controller.response.TransferResponseDTO;

@@ -7,7 +7,7 @@ public class TransferResponseAPIResponseEntity {
     public static ResponseEntity<TransferResponseDTO> getTransferResponseDTOResponseEntity(
             final TransferResponseDTO transferResponseDTO) {
 
-        if (transferResponseDTO.getValor() > 0) {
+        if (transferResponseDTO.getLimiteDiario() > 0) {
             return ResponseEntity.ok().body(transferResponseDTO);
         }
 

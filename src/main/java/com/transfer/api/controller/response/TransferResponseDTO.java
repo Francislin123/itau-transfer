@@ -9,11 +9,11 @@ import lombok.Setter;
 public class TransferResponseDTO {
 
     private String idTransferencia;
-    private double valor;
+    private double limiteDiario;
 
     @Builder
-    public TransferResponseDTO(String idTransferencia, double valor) {
+    public TransferResponseDTO(String idTransferencia, double limiteDiario) {
         this.idTransferencia = idTransferencia;
-        this.valor = valor;
+        this.limiteDiario = limiteDiario;
     }
 }

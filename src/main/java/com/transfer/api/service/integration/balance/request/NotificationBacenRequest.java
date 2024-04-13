@@ -1,4 +1,4 @@
-package com.transfer.api.integration.balance.request;
+package com.transfer.api.service.integration.balance.request;
 
 import com.transfer.api.controller.request.ContaRequestDto;
 import lombok.Builder;

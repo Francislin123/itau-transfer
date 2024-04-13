@@ -1,4 +1,4 @@
-package com.transfer.api.facade;
+package com.transfer.api.service;
 
 import com.transfer.api.controller.request.TransferRequestDTO;
 import com.transfer.api.controller.response.TransferResponseDTO;

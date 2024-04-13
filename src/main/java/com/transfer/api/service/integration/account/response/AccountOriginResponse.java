@@ -1,4 +1,4 @@
-package com.transfer.api.integration.account.response;
+package com.transfer.api.service.integration.account.response;
 
 import lombok.Builder;
 import lombok.Data;

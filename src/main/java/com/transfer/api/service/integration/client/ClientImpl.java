@@ -1,7 +1,7 @@
-package com.transfer.api.integration.client;
+package com.transfer.api.service.integration.client;
 
 import com.google.gson.Gson;
-import com.transfer.api.integration.client.response.ClientResponse;
+import com.transfer.api.service.integration.client.response.ClientResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

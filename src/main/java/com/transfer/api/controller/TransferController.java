@@ -3,7 +3,7 @@ package com.transfer.api.controller;
 import com.transfer.api.controller.request.TransferRequestDTO;
 import com.transfer.api.controller.response.TransferResponseAPIResponseEntity;
 import com.transfer.api.controller.response.TransferResponseDTO;
-import com.transfer.api.facade.TransferFacade;
+import com.transfer.api.service.facade.TransferFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

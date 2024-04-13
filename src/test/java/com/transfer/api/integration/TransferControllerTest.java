@@ -70,7 +70,7 @@ public class TransferControllerTest {
                 .build();
 
         TransferRequestDTO transferRequestDTO = TransferRequestDTO.builder()
-                .idCliente("bcdd1048-a501-4608-bc82-66d7b4db3600")
+                .idCliente("2ceb26e9-7b5c-417e-bf75-ffaa66e3a76f")
                 .valor(500.00)
                 .conta(contaRequestDto)
                 .build();

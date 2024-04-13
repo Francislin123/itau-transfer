@@ -2,8 +2,8 @@ package com.transfer.api.util.template;
 
 import com.transfer.api.controller.request.ContaRequestDto;
 import com.transfer.api.controller.request.TransferRequestDTO;
-import com.transfer.api.integration.account.response.AccountOriginResponse;
-import com.transfer.api.integration.client.response.ClientResponse;
+import com.transfer.api.service.integration.account.response.AccountOriginResponse;
+import com.transfer.api.service.integration.client.response.ClientResponse;
 
 public class Templates {
 
