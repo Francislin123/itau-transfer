@@ -21,7 +21,7 @@ public class TransferClientImpl implements TransferClient {
 
         Gson gson = new Gson();
 
-        final String bodyResultFinal;
+        String bodyResultFinal = "";
 
         try {
 
@@ -50,8 +50,7 @@ public class TransferClientImpl implements TransferClient {
             bodyResultFinal = response.body();
 
         } catch (IOException | InterruptedException e) {
-            log.trace("Error with integration", e);
-            throw new RuntimeException(e);
+            log.trace(e.getMessage(), e);
         }
 
         TransferResponseDTO transferResponseDTO = gson.fromJson(bodyResultFinal, TransferResponseDTO.class);

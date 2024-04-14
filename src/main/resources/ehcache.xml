@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="ehcache.xsd" updateCheck="false"
+         monitoring="autodetect" dynamicConfig="false">
+
+    <cache name="validateIfTheClientExists"
+           eternal="false"
+           overflowToDisk="false"
+           timeToLiveSeconds="3600"
+           timeToIdleSeconds="3600"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+    <cache name="searchSourceAccountData"
+           eternal="false"
+           overflowToDisk="false"
+           timeToLiveSeconds="3600"
+           timeToIdleSeconds="3600"
+           memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+    <defaultCache
+            eternal="false"
+            timeToLiveSeconds="60"
+            timeToIdleSeconds="60"
+            overflowToDisk="false"
+            memoryStoreEvictionPolicy="LRU"/>
+
+</ehcache>

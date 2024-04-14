@@ -11,6 +11,8 @@
 - Integration Test: Rest Assured 5.4.0;
 - Unit Test: Junit 4.13.2;
 - Design Patterns (Facade/Builder);
+- Ehcache core 2.6.11;
+- Hibernate ehcache 6.0.0.Alpha7;
 - AWS (API Gateway, Elastic Load Balancing (ELB), EC2 Auto Scaling e CloudWatch);
 
 ### To run the application just follow the steps below.

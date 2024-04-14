@@ -3,6 +3,7 @@ package com.transfer.api.service.integration.account;
 import com.google.gson.Gson;
 import com.transfer.api.service.integration.account.response.AccountOriginResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ public class AccountImpl implements Account {
             HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
 
     @Override
+    @Cacheable(cacheNames = "searchSourceAccountData")
     public AccountOriginResponse searchSourceAccountData(final String idAccountOrigin) {
 
         final String bodyResultFinal;

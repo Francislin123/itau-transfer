@@ -3,6 +3,7 @@ package com.transfer.api.service.integration.client;
 import com.google.gson.Gson;
 import com.transfer.api.service.integration.client.response.ClientResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ public class ClientImpl implements Client {
                     .build();
 
     @Override
+    @Cacheable(cacheNames = "validateIfTheClientExists")
     public ClientResponse validateIfTheClientExists(final String idClient) {
         final String bodyResultFinal;
         try {

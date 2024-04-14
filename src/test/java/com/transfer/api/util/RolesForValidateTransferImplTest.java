@@ -17,6 +17,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 import static com.transfer.api.util.template.Templates.*;
 import static org.mockito.Mockito.*;
 
@@ -40,7 +43,7 @@ public class RolesForValidateTransferImplTest {
     private RolesForValidateTransfer rolesForValidateTransfer = new RolesForValidateTransferImpl();
 
     @Test
-    public void makeTransferCompletedTest() {
+    public void makeTransferCompletedTest() throws ExecutionException, InterruptedException, TimeoutException {
 
         ContaRequestDto contaRequestDto = getContaRequestDto();
 
@@ -66,7 +69,7 @@ public class RolesForValidateTransferImplTest {
     }
 
     @Test
-    public void validateIfTheClientNotExistsTest() {
+    public void validateIfTheClientNotExistsTest() throws ExecutionException, InterruptedException, TimeoutException {
 
         ContaRequestDto contaRequestDto = getContaRequestDto();
 
@@ -86,7 +89,7 @@ public class RolesForValidateTransferImplTest {
     }
 
     @Test
-    public void dailyLimitTestExceededTest() {
+    public void dailyLimitTestExceededTest() throws ExecutionException, InterruptedException, TimeoutException {
 
         ContaRequestDto contaRequestDto = getContaRequestDto();
 

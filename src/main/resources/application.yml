@@ -29,7 +29,25 @@ spring:
     format-sql: true
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create
+      dialect: org.hibernate.dialect.H2Dialect
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.H2Dialect
+          show_sql: true
+          hbm2ddl:
+            auto: none
+          connection:
+            release_mode: auto
+            autocommit: false
+          generate_statistics: true
+          cache:
+            region.factory_class: org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory
+            use_second_level_cache: true
+            use_query_cache: true
+          temp:
+            use_jdbc_metadata_defaults: false
+        show-sql: false
+    properties.hibernate.temp.use_jdbc_metadata_defaults: false
 
   logging:
   level:
@@ -39,7 +57,7 @@ spring:
 
   datasource:
     driverClassName: org.h2.Driver
-    url: jdbc:h2:mem:csv
+    url: jdbc:h2:mem:transfer
     username: sa
     password: sa
 
