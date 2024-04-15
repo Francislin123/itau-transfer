@@ -15,6 +15,9 @@
 - Hibernate ehcache 6.0.0.Alpha7;
 - AWS (API Gateway, Elastic Load Balancing (ELB), EC2 Auto Scaling e CloudWatch);
 
+### Cache
+- Caching was used for account and client search calls for better performance and to reduce the impact if the third-party API is out
+
 ### To run the application just follow the steps below.
 - 1 - Enter the folder where the project jar is
 - 2 - Execute the following command by cmd
