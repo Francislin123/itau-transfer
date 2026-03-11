@@ -26,6 +26,12 @@
 ### Documentation for testing api (Swagger)
 - http://localhost:8077/api/v1/swagger-ui/index.html#/
 
+### Registration APIs, accounts, and Central Bank of Brazil (BACEN). 
+- To run this application, it is necessary to have 
+- another API running on your machine that provides account information from the Central Bank of Brazil (BACEN). 
+- This API can be found at the link below.
+- https://github.com/mllcarvalho/DesafioItau
+
 ### Aws Solution Architecture
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1712892067/l84vma0nozvuoidlshzg.png)
 
