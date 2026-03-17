@@ -42,3 +42,16 @@
 
 ### About this Architecture
 - This architecture provides a highly scalable and resilient solution, capable of handling variable workloads and ensuring high availability. Additionally, the use of CloudWatch enables proactive monitoring of application health and performance, enabling informed decisions about infrastructure adjustments..
+
+# 👨‍💻 Autor
+
+**Francislin**
+**Engenharia de Software**
+
+---
+
+# ⭐ Se gostou do projeto
+
+Deixe uma **⭐ no repositório** para apoiar o desenvolvimento.
+
+---
