@@ -5,14 +5,16 @@ info:
     version: 0.0.1-SNAPSHOT
 
 server:
-  port: 8077
+  port: 8080
   contextPath: /transfer-api
   tomcat:
     basedir: /tmp/tomcat
 
 management:
-  security:
-    enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 spring:
   application:

@@ -16,7 +16,7 @@ public class TransferControllerTest {
     @BeforeClass
     public static void setUp() {
         baseURI = "http://localhost";
-        port = 8077;
+        port = 8080;
         basePath = "/api/v1";
     }
 
