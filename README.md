@@ -24,7 +24,7 @@
 - 3 - java -jar transfer-api-0.0.1-SNAPSHOT.jar --spring.config.location = file: C: /Config/application.yml
 
 ### Documentation for testing api (Swagger)
-- http://localhost:8077/api/v1/swagger-ui/index.html#/
+- http://localhost:8077/swagger-ui/index.html#/
 
 ### Registration APIs, accounts, and Central Bank of Brazil (BACEN). 
 - To run this application, it is necessary to have 
@@ -33,7 +33,7 @@
 - https://github.com/mllcarvalho/DesafioItau
 
 ### Actuator health
-- http://localhost:8080/api/v1/actuator/health
+- http://localhost:8080/actuator/health
 
 ### Aws Solution Architecture
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1712892067/l84vma0nozvuoidlshzg.png)
