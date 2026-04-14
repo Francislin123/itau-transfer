@@ -36,7 +36,7 @@
 - http://localhost:8080/actuator/health
 
 ### Aws Solution Architecture
-![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1712892067/l84vma0nozvuoidlshzg.png)
+![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1776192524/mmfkxrihlnn7bglvloqd.png)
 
 - API Gateway: Used as an entry point for the application. It receives client requests and forwards them to the corresponding services.
 - Elastic Load Balancing (ELB): Distributes incoming traffic among EC2 instances. Ensures high availability and scalability by directing traffic only to healthy instances.
