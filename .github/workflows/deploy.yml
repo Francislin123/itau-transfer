@@ -27,28 +27,35 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push image
+      - name: Build image
         run: |
-          docker build -t $ECR_REPOSITORY:${GITHUB_SHA} .
-          docker tag $ECR_REPOSITORY:${GITHUB_SHA} \
-            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${GITHUB_SHA}
+          docker build -t itau-transfer:${GITHUB_SHA} .
+
+      - name: Tag image
+        run: |
+          docker tag itau-transfer:${GITHUB_SHA} \
+          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
+
+      - name: Push image
+        run: |
           docker push \
-            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${GITHUB_SHA}
+          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
 
       - name: Update GREEN service
         run: |
           aws ecs update-service \
-            --cluster $CLUSTER \
-            --service $GREEN_SERVICE \
+            --cluster ${{ env.CLUSTER }} \
+            --service ${{ env.GREEN_SERVICE }} \
             --force-new-deployment
 
       - name: Wait GREEN stabilization
         run: |
           aws ecs wait services-stable \
-            --cluster $CLUSTER \
-            --services $GREEN_SERVICE
+            --cluster ${{ env.CLUSTER }} \
+            --services ${{ env.GREEN_SERVICE }}
 
       - name: Canary 10%
         run: |
@@ -61,7 +68,7 @@ jobs:
               ]
             }'
 
-      - name: Wait 5 minutes (monitoring)
+      - name: Wait 5 minutes
         run: sleep 300
 
       - name: Canary 50%
@@ -92,6 +99,6 @@ jobs:
       - name: Scale down BLUE (optional)
         run: |
           aws ecs update-service \
-            --cluster $CLUSTER \
-            --service $BLUE_SERVICE \
+            --cluster ${{ env.CLUSTER }} \
+            --service ${{ env.BLUE_SERVICE }} \
             --desired-count 0
