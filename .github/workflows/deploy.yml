@@ -60,11 +60,25 @@ jobs:
       # 🔥 CANARY 10%
       - name: Canary 10%
         run: |
-          CONFIG='{"TargetGroups":[{"TargetGroupArn":"'"${{ secrets.BLUE_TG_ARN }}"'","Weight":90},{"TargetGroupArn":"'"${{ secrets.GREEN_TG_ARN }}"'","Weight":10}]}'
-
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions Type=forward,ForwardConfig="$CONFIG"
+            --default-actions '[
+              {
+                "Type": "forward",
+                "ForwardConfig": {
+                  "TargetGroups": [
+                    {
+                      "TargetGroupArn": "'"${{ secrets.BLUE_TG_ARN }}"'",
+                      "Weight": 90
+                    },
+                    {
+                      "TargetGroupArn": "'"${{ secrets.GREEN_TG_ARN }}"'",
+                      "Weight": 10
+                    }
+                  ]
+                }
+              }
+            ]'
 
       - name: Wait 5 minutes
         run: sleep 300
@@ -72,11 +86,25 @@ jobs:
       # 🔥 CANARY 50%
       - name: Canary 50%
         run: |
-          CONFIG='{"TargetGroups":[{"TargetGroupArn":"'"${{ secrets.BLUE_TG_ARN }}"'","Weight":50},{"TargetGroupArn":"'"${{ secrets.GREEN_TG_ARN }}"'","Weight":50}]}'
-
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions Type=forward,ForwardConfig="$CONFIG"
+            --default-actions '[
+              {
+                "Type": "forward",
+                "ForwardConfig": {
+                  "TargetGroups": [
+                    {
+                      "TargetGroupArn": "'"${{ secrets.BLUE_TG_ARN }}"'",
+                      "Weight": 50
+                    },
+                    {
+                      "TargetGroupArn": "'"${{ secrets.GREEN_TG_ARN }}"'",
+                      "Weight": 50
+                    }
+                  ]
+                }
+              }
+            ]'
 
       - name: Wait 5 minutes
         run: sleep 300
@@ -84,11 +112,25 @@ jobs:
       # 🔥 FULL GREEN
       - name: Full traffic to GREEN
         run: |
-          CONFIG='{"TargetGroups":[{"TargetGroupArn":"'"${{ secrets.BLUE_TG_ARN }}"'","Weight":0},{"TargetGroupArn":"'"${{ secrets.GREEN_TG_ARN }}"'","Weight":100}]}'
-
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions Type=forward,ForwardConfig="$CONFIG"
+            --default-actions '[
+              {
+                "Type": "forward",
+                "ForwardConfig": {
+                  "TargetGroups": [
+                    {
+                      "TargetGroupArn": "'"${{ secrets.BLUE_TG_ARN }}"'",
+                      "Weight": 0
+                    },
+                    {
+                      "TargetGroupArn": "'"${{ secrets.GREEN_TG_ARN }}"'",
+                      "Weight": 100
+                    }
+                  ]
+                }
+              }
+            ]'
 
       - name: Scale down BLUE (optional)
         run: |
