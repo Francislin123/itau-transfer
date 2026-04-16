@@ -47,58 +47,52 @@ jobs:
       - name: Update GREEN service
         run: |
           aws ecs update-service \
-            --cluster ${{ env.CLUSTER }} \
-            --service ${{ env.GREEN_SERVICE }} \
+            --cluster "${{ env.CLUSTER }}" \
+            --service "${{ env.GREEN_SERVICE }}" \
             --force-new-deployment
 
       - name: Wait GREEN stabilization
         run: |
           aws ecs wait services-stable \
-            --cluster ${{ env.CLUSTER }} \
-            --services ${{ env.GREEN_SERVICE }}
+            --cluster "${{ env.CLUSTER }}" \
+            --services "${{ env.GREEN_SERVICE }}"
 
+      # 🔥 CANARY 10%
       - name: Canary 10%
         run: |
+          CONFIG='{"TargetGroups":[{"TargetGroupArn":"'"${{ secrets.BLUE_TG_ARN }}"'","Weight":90},{"TargetGroupArn":"'"${{ secrets.GREEN_TG_ARN }}"'","Weight":10}]}'
+
           aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.LISTENER_ARN }} \
-            --default-actions Type=forward,ForwardConfig='{
-              "TargetGroups":[
-                {"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":90},
-                {"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":10}
-              ]
-            }'
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --default-actions Type=forward,ForwardConfig="$CONFIG"
 
       - name: Wait 5 minutes
         run: sleep 300
 
+      # 🔥 CANARY 50%
       - name: Canary 50%
         run: |
+          CONFIG='{"TargetGroups":[{"TargetGroupArn":"'"${{ secrets.BLUE_TG_ARN }}"'","Weight":50},{"TargetGroupArn":"'"${{ secrets.GREEN_TG_ARN }}"'","Weight":50}]}'
+
           aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.LISTENER_ARN }} \
-            --default-actions Type=forward,ForwardConfig='{
-              "TargetGroups":[
-                {"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":50},
-                {"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":50}
-              ]
-            }'
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --default-actions Type=forward,ForwardConfig="$CONFIG"
 
       - name: Wait 5 minutes
         run: sleep 300
 
+      # 🔥 FULL GREEN
       - name: Full traffic to GREEN
         run: |
+          CONFIG='{"TargetGroups":[{"TargetGroupArn":"'"${{ secrets.BLUE_TG_ARN }}"'","Weight":0},{"TargetGroupArn":"'"${{ secrets.GREEN_TG_ARN }}"'","Weight":100}]}'
+
           aws elbv2 modify-listener \
-            --listener-arn ${{ secrets.LISTENER_ARN }} \
-            --default-actions Type=forward,ForwardConfig='{
-              "TargetGroups":[
-                {"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":0},
-                {"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":100}
-              ]
-            }'
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --default-actions Type=forward,ForwardConfig="$CONFIG"
 
       - name: Scale down BLUE (optional)
         run: |
           aws ecs update-service \
-            --cluster ${{ env.CLUSTER }} \
-            --service ${{ env.BLUE_SERVICE }} \
+            --cluster "${{ env.CLUSTER }}" \
+            --service "${{ env.BLUE_SERVICE }}" \
             --desired-count 0
