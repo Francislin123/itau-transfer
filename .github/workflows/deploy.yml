@@ -1,29 +1,23 @@
-name: Build and Push to ECR
+name: Progressive Deploy (Blue/Green via ALB)
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
 
 env:
   AWS_REGION: us-east-2
   ECR_REPOSITORY: itau-transfer
+  CLUSTER: itau-transfer-cluster
+  GREEN_SERVICE: itau-transfer-service-green
+  BLUE_SERVICE: itau-transfer-service
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Build JAR
-        run: mvn clean package -DskipTests
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -32,28 +26,72 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Build and push image
         run: |
-          docker build -t ${{ env.ECR_REPOSITORY }} .
-
-      - name: Tag image
-        run: |
-          docker tag ${{ env.ECR_REPOSITORY }}:latest \
-          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-
-      - name: Push image to ECR
-        run: |
+          docker build -t $ECR_REPOSITORY:${GITHUB_SHA} .
+          docker tag $ECR_REPOSITORY:${GITHUB_SHA} \
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${GITHUB_SHA}
           docker push \
-          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${GITHUB_SHA}
 
-      # 🚀 NOVO STEP
-      - name: Deploy to ECS
+      - name: Update GREEN service
         run: |
           aws ecs update-service \
-            --cluster itau-transfer-cluster \
-            --service itau-transfer-service \
+            --cluster $CLUSTER \
+            --service $GREEN_SERVICE \
             --force-new-deployment
+
+      - name: Wait GREEN stabilization
+        run: |
+          aws ecs wait services-stable \
+            --cluster $CLUSTER \
+            --services $GREEN_SERVICE
+
+      - name: Canary 10%
+        run: |
+          aws elbv2 modify-listener \
+            --listener-arn ${{ secrets.LISTENER_ARN }} \
+            --default-actions Type=forward,ForwardConfig='{
+              "TargetGroups":[
+                {"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":90},
+                {"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":10}
+              ]
+            }'
+
+      - name: Wait 5 minutes (monitoring)
+        run: sleep 300
+
+      - name: Canary 50%
+        run: |
+          aws elbv2 modify-listener \
+            --listener-arn ${{ secrets.LISTENER_ARN }} \
+            --default-actions Type=forward,ForwardConfig='{
+              "TargetGroups":[
+                {"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":50},
+                {"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":50}
+              ]
+            }'
+
+      - name: Wait 5 minutes
+        run: sleep 300
+
+      - name: Full traffic to GREEN
+        run: |
+          aws elbv2 modify-listener \
+            --listener-arn ${{ secrets.LISTENER_ARN }} \
+            --default-actions Type=forward,ForwardConfig='{
+              "TargetGroups":[
+                {"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":0},
+                {"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":100}
+              ]
+            }'
+
+      - name: Scale down BLUE (optional)
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service $BLUE_SERVICE \
+            --desired-count 0
