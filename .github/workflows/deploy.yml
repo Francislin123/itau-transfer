@@ -46,7 +46,6 @@ jobs:
 
       # 🔥 DETECTA AMBIENTE ATIVO
       - name: Detect active environment
-        id: detect-env
         run: |
           CURRENT=$(aws elbv2 describe-listeners \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
@@ -137,7 +136,7 @@ jobs:
       - name: Wait 2 minutes
         run: sleep 120
 
-      # 🔥 FULL SWITCH
+      # 🔥 FULL SWITCH + STANDBY
       - name: Full traffic switch
         run: |
           if [ "${DEPLOY_COLOR}" == "green" ]; then
@@ -170,9 +169,9 @@ jobs:
               }
             ]"
 
-          echo "Scaling down old service: $OLD_SERVICE"
+          echo "Keeping old service as standby: $OLD_SERVICE"
 
           aws ecs update-service \
             --cluster "${{ env.CLUSTER }}" \
             --service "$OLD_SERVICE" \
-            --desired-count 0
+            --desired-count 1
