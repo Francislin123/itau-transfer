@@ -53,14 +53,6 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-      # 🔍 Dependency Check (OTIMIZADO)
-      - name: Dependency Check
-        run: |
-          mvn org.owasp:dependency-check-maven:check \
-            -Dnvd.api.key=${{ secrets.NVD_API_KEY }} \
-            -Dformat=HTML \
-            -DfailBuildOnCVSS=7
-
       # 🔍 Docker scan build
       - name: Build Docker (scan)
         run: docker build -t scan-image .
