@@ -44,97 +44,135 @@ jobs:
           docker push \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
 
-      - name: Update GREEN service
+      # 🔥 DETECTA AMBIENTE ATIVO
+      - name: Detect active environment
+        id: detect-env
+        run: |
+          CURRENT=$(aws elbv2 describe-listeners \
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?Weight==\`100\`].TargetGroupArn" \
+            --output text)
+
+          echo "Current active TG: $CURRENT"
+
+          if [ "$CURRENT" == "${{ secrets.BLUE_TG_ARN }}" ]; then
+            echo "DEPLOY_SERVICE=${{ env.GREEN_SERVICE }}" >> $GITHUB_ENV
+            echo "DEPLOY_COLOR=green" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_SERVICE=${{ env.BLUE_SERVICE }}" >> $GITHUB_ENV
+            echo "DEPLOY_COLOR=blue" >> $GITHUB_ENV
+          fi
+
+      # 🔄 DEPLOY NO AMBIENTE CORRETO
+      - name: Update target service
         run: |
           aws ecs update-service \
             --cluster "${{ env.CLUSTER }}" \
-            --service "${{ env.GREEN_SERVICE }}" \
+            --service "${{ env.DEPLOY_SERVICE }}" \
             --force-new-deployment
 
-      - name: Wait GREEN stabilization
+      - name: Wait stabilization
         run: |
           aws ecs wait services-stable \
             --cluster "${{ env.CLUSTER }}" \
-            --services "${{ env.GREEN_SERVICE }}"
+            --services "${{ env.DEPLOY_SERVICE }}"
 
       # 🔥 CANARY 10%
       - name: Canary 10%
         run: |
+          if [ "${DEPLOY_COLOR}" == "green" ]; then
+            BLUE=90
+            GREEN=10
+          else
+            BLUE=10
+            GREEN=90
+          fi
+
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions '[
+            --default-actions "[
               {
-                "Type": "forward",
-                "ForwardConfig": {
-                  "TargetGroups": [
+                \"Type\": \"forward\",
+                \"ForwardConfig\": {
+                  \"TargetGroups\": [
                     {
-                      "TargetGroupArn": "'"${{ secrets.BLUE_TG_ARN }}"'",
-                      "Weight": 90
+                      \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
+                      \"Weight\": $BLUE
                     },
                     {
-                      "TargetGroupArn": "'"${{ secrets.GREEN_TG_ARN }}"'",
-                      "Weight": 10
+                      \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
+                      \"Weight\": $GREEN
                     }
                   ]
                 }
               }
-            ]'
+            ]"
 
-      - name: Wait 5 minutes
-        run: sleep 300
+      - name: Wait 2 minutes
+        run: sleep 120
 
       # 🔥 CANARY 50%
       - name: Canary 50%
         run: |
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions '[
+            --default-actions "[
               {
-                "Type": "forward",
-                "ForwardConfig": {
-                  "TargetGroups": [
+                \"Type\": \"forward\",
+                \"ForwardConfig\": {
+                  \"TargetGroups\": [
                     {
-                      "TargetGroupArn": "'"${{ secrets.BLUE_TG_ARN }}"'",
-                      "Weight": 50
+                      \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
+                      \"Weight\": 50
                     },
                     {
-                      "TargetGroupArn": "'"${{ secrets.GREEN_TG_ARN }}"'",
-                      "Weight": 50
+                      \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
+                      \"Weight\": 50
                     }
                   ]
                 }
               }
-            ]'
+            ]"
 
-      - name: Wait 5 minutes
-        run: sleep 300
+      - name: Wait 2 minutes
+        run: sleep 120
 
-      # 🔥 FULL GREEN
-      - name: Full traffic to GREEN
+      # 🔥 FULL SWITCH
+      - name: Full traffic switch
         run: |
+          if [ "${DEPLOY_COLOR}" == "green" ]; then
+            BLUE=0
+            GREEN=100
+            OLD_SERVICE="${{ env.BLUE_SERVICE }}"
+          else
+            BLUE=100
+            GREEN=0
+            OLD_SERVICE="${{ env.GREEN_SERVICE }}"
+          fi
+
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions '[
+            --default-actions "[
               {
-                "Type": "forward",
-                "ForwardConfig": {
-                  "TargetGroups": [
+                \"Type\": \"forward\",
+                \"ForwardConfig\": {
+                  \"TargetGroups\": [
                     {
-                      "TargetGroupArn": "'"${{ secrets.BLUE_TG_ARN }}"'",
-                      "Weight": 0
+                      \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
+                      \"Weight\": $BLUE
                     },
                     {
-                      "TargetGroupArn": "'"${{ secrets.GREEN_TG_ARN }}"'",
-                      "Weight": 100
+                      \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
+                      \"Weight\": $GREEN
                     }
                   ]
                 }
               }
-            ]'
+            ]"
 
-      - name: Scale down BLUE (optional)
-        run: |
+          echo "Scaling down old service: $OLD_SERVICE"
+
           aws ecs update-service \
             --cluster "${{ env.CLUSTER }}" \
-            --service "${{ env.BLUE_SERVICE }}" \
+            --service "$OLD_SERVICE" \
             --desired-count 0
