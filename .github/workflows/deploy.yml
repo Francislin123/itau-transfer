@@ -1,4 +1,4 @@
-name: Build, Deploy & Progressive Release
+name: DevSecOps Pipeline (AWS ECS Blue/Green)
 
 on:
   push:
@@ -12,14 +12,49 @@ env:
   BLUE_SERVICE: itau-transfer-service
 
 jobs:
-  deploy:
+
+  security:
+    name: Security Scans (DevSecOps Gate)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ☕ JAVA BUILD
+      # 🔍 SAST - CodeQL (GitHub native)
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      # 🔍 Dependency Scan (Maven)
+      - name: Dependency Check
+        run: mvn org.owasp:dependency-check-maven:check
+
+      # 🔍 Docker build for scan
+      - name: Build Docker (for scan)
+        run: docker build -t scan-image .
+
+      # 🔍 Container Scan (Trivy)
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'scan-image'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: security
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -29,7 +64,6 @@ jobs:
       - name: Build JAR
         run: mvn clean package -DskipTests
 
-      # 🔐 AWS CREDENTIALS
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -37,29 +71,37 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 🔑 ECR LOGIN
-      - name: Login to Amazon ECR
+      - name: Login ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 🐳 BUILD IMAGE
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ env.ECR_REPOSITORY }}:${GITHUB_SHA} .
+      - name: Build Docker Image
+        run: docker build -t $ECR_REPOSITORY:${GITHUB_SHA} .
 
-      # 🏷 TAG IMAGE
-      - name: Tag image
+      - name: Tag Image
         run: |
-          docker tag ${{ env.ECR_REPOSITORY }}:${GITHUB_SHA} \
+          docker tag $ECR_REPOSITORY:${GITHUB_SHA} \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
 
-      # 📦 PUSH IMAGE
-      - name: Push image to ECR
+      - name: Push Image
         run: |
           docker push \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
 
-      # 🔍 DETECTA AMBIENTE ATIVO
+  deploy:
+    name: Blue/Green + Canary Deploy
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 🔍 Detect active environment
       - name: Detect active environment
         run: |
           CURRENT=$(aws elbv2 describe-listeners \
@@ -67,34 +109,34 @@ jobs:
             --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?Weight==\`100\`].TargetGroupArn" \
             --output text)
 
-          echo "ACTIVE_TG=$CURRENT" >> $GITHUB_ENV
+          echo "ACTIVE=$CURRENT" >> $GITHUB_ENV
 
           if [ "$CURRENT" == "${{ secrets.BLUE_TG_ARN }}" ]; then
-            echo "DEPLOY_SERVICE=${{ env.GREEN_SERVICE }}" >> $GITHUB_ENV
-            echo "DEPLOY_COLOR=green" >> $GITHUB_ENV
+            echo "DEPLOY=green" >> $GITHUB_ENV
+            echo "SERVICE=${{ env.GREEN_SERVICE }}" >> $GITHUB_ENV
           else
-            echo "DEPLOY_SERVICE=${{ env.BLUE_SERVICE }}" >> $GITHUB_ENV
-            echo "DEPLOY_COLOR=blue" >> $GITHUB_ENV
+            echo "DEPLOY=blue" >> $GITHUB_ENV
+            echo "SERVICE=${{ env.BLUE_SERVICE }}" >> $GITHUB_ENV
           fi
 
-      # 🚀 DEPLOY ECS
-      - name: Deploy service
+      # 🚀 Deploy ECS
+      - name: Deploy Service
         run: |
           aws ecs update-service \
-            --cluster "${{ env.CLUSTER }}" \
-            --service "${{ env.DEPLOY_SERVICE }}" \
+            --cluster $CLUSTER \
+            --service $SERVICE \
             --force-new-deployment
 
-      - name: Wait stabilization
+      - name: Wait Stable
         run: |
           aws ecs wait services-stable \
-            --cluster "${{ env.CLUSTER }}" \
-            --services "${{ env.DEPLOY_SERVICE }}"
+            --cluster $CLUSTER \
+            --services $SERVICE
 
-      # 🔥 CANARY 10%
-      - name: Canary 10%
+      # 🔥 Canary 10%
+      - name: Canary Deploy
         run: |
-          if [ "${DEPLOY_COLOR}" == "green" ]; then
+          if [ "$DEPLOY" == "green" ]; then
             BLUE=90
             GREEN=10
           else
@@ -109,93 +151,21 @@ jobs:
                 \"Type\": \"forward\",
                 \"ForwardConfig\": {
                   \"TargetGroups\": [
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
-                      \"Weight\": $BLUE
-                    },
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
-                      \"Weight\": $GREEN
-                    }
+                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": $BLUE},
+                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": $GREEN}
                   ]
                 }
               }
             ]"
 
-      # ⏳ WAIT
-      - name: Wait after 10%
-        run: sleep 120
-
-      # 🔥 CANARY 50%
-      - name: Canary 50%
+      # 🧪 Health Check (gate)
+      - name: Health Check
         run: |
-          aws elbv2 modify-listener \
-            --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions "[
-              {
-                \"Type\": \"forward\",
-                \"ForwardConfig\": {
-                  \"TargetGroups\": [
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
-                      \"Weight\": 50
-                    },
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
-                      \"Weight\": 50
-                    }
-                  ]
-                }
-              }
-            ]"
-
-      # ⏳ WAIT
-      - name: Wait after 50%
-        run: sleep 120
-
-      # 🚀 FULL TRAFFIC SWITCH
-      - name: Full traffic switch
-        run: |
-          if [ "${DEPLOY_COLOR}" == "green" ]; then
-            BLUE=0
-            GREEN=100
-          else
-            BLUE=100
-            GREEN=0
-          fi
-
-          aws elbv2 modify-listener \
-            --listener-arn "${{ secrets.LISTENER_ARN }}" \
-            --default-actions "[
-              {
-                \"Type\": \"forward\",
-                \"ForwardConfig\": {
-                  \"TargetGroups\": [
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
-                      \"Weight\": $BLUE
-                    },
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
-                      \"Weight\": $GREEN
-                    }
-                  ]
-                }
-              }
-            ]"
-
-      # 🧪 HEALTH CHECK (SECRET)
-      - name: Health check
-        run: |
-          echo "Validando saúde..."
-
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.HEALTH_URL }}")
-
             echo "Status: $STATUS"
 
             if [ "$STATUS" == "200" ]; then
-              echo "OK"
               exit 0
             fi
 
@@ -204,19 +174,11 @@ jobs:
 
           exit 1
 
-      # 🔴 ROLLBACK AUTOMÁTICO
+      # 🔴 Rollback automático
       - name: Rollback
         if: failure()
         run: |
-          echo "Rollback iniciado..."
-
-          if [ "${DEPLOY_COLOR}" == "green" ]; then
-            BLUE=100
-            GREEN=0
-          else
-            BLUE=0
-            GREEN=100
-          fi
+          echo "Rollback triggered"
 
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
@@ -225,14 +187,8 @@ jobs:
                 \"Type\": \"forward\",
                 \"ForwardConfig\": {
                   \"TargetGroups\": [
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
-                      \"Weight\": $BLUE
-                    },
-                    {
-                      \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
-                      \"Weight\": $GREEN
-                    }
+                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": 100},
+                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": 0}
                   ]
                 }
               }
