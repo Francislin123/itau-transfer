@@ -17,28 +17,44 @@ jobs:
     name: Security Scans (DevSecOps Gate)
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 🔍 SAST - CodeQL (GitHub native)
+      # ☕ Java setup
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # 🔍 CodeQL INIT
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: java
 
+      # 🔥 BUILD OBRIGATÓRIO PARA JAVA
+      - name: Build project (CodeQL requirement)
+        run: mvn clean compile
+
+      # 🔍 CodeQL ANALYZE
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-      # 🔍 Dependency Scan (Maven)
+      # 🔍 Dependency Scan
       - name: Dependency Check
         run: mvn org.owasp:dependency-check-maven:check
 
       # 🔍 Docker build for scan
-      - name: Build Docker (for scan)
+      - name: Build Docker (scan)
         run: docker build -t scan-image .
 
-      # 🔍 Container Scan (Trivy)
+      # 🔍 Container Scan
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -47,7 +63,7 @@ jobs:
           exit-code: '1'
 
   build:
-    name: Build & Push
+    name: Build & Push Image
     runs-on: ubuntu-latest
     needs: security
 
@@ -71,25 +87,25 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login ECR
+      - name: Login to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker Image
+      - name: Build Docker image
         run: docker build -t $ECR_REPOSITORY:${GITHUB_SHA} .
 
-      - name: Tag Image
+      - name: Tag image
         run: |
           docker tag $ECR_REPOSITORY:${GITHUB_SHA} \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
 
-      - name: Push Image
+      - name: Push image
         run: |
           docker push \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
 
   deploy:
-    name: Blue/Green + Canary Deploy
+    name: Blue/Green + Canary + Rollback
     runs-on: ubuntu-latest
     needs: build
 
@@ -109,7 +125,7 @@ jobs:
             --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?Weight==\`100\`].TargetGroupArn" \
             --output text)
 
-          echo "ACTIVE=$CURRENT" >> $GITHUB_ENV
+          echo "ACTIVE=$CURRENT"
 
           if [ "$CURRENT" == "${{ secrets.BLUE_TG_ARN }}" ]; then
             echo "DEPLOY=green" >> $GITHUB_ENV
@@ -120,28 +136,28 @@ jobs:
           fi
 
       # 🚀 Deploy ECS
-      - name: Deploy Service
+      - name: Deploy service
         run: |
           aws ecs update-service \
             --cluster $CLUSTER \
             --service $SERVICE \
             --force-new-deployment
 
-      - name: Wait Stable
+      - name: Wait stabilization
         run: |
           aws ecs wait services-stable \
             --cluster $CLUSTER \
             --services $SERVICE
 
-      # 🔥 Canary 10%
-      - name: Canary Deploy
+      # 🔥 Canary Deploy (50% option included)
+      - name: Canary Deploy (50/50)
         run: |
           if [ "$DEPLOY" == "green" ]; then
-            BLUE=90
-            GREEN=10
+            BLUE=50
+            GREEN=50
           else
-            BLUE=10
-            GREEN=90
+            BLUE=50
+            GREEN=50
           fi
 
           aws elbv2 modify-listener \
@@ -158,11 +174,12 @@ jobs:
               }
             ]"
 
-      # 🧪 Health Check (gate)
+      # 🧪 Health Check
       - name: Health Check
         run: |
           for i in {1..10}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.HEALTH_URL }}")
+
             echo "Status: $STATUS"
 
             if [ "$STATUS" == "200" ]; then
@@ -194,4 +211,4 @@ jobs:
               }
             ]"
 
-          echo "Rollback concluído"
+          exit 1
