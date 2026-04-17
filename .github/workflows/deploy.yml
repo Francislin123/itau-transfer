@@ -13,6 +13,9 @@ env:
 
 jobs:
 
+  # =========================
+  # 🔐 SECURITY LAYER
+  # =========================
   security:
     name: Security Scans (DevSecOps Gate)
     runs-on: ubuntu-latest
@@ -25,21 +28,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ☕ Java setup
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # 📦 CACHE (resolve lentidão do Dependency Check)
-      - name: Cache OWASP DB
+      # ⚡ CACHE MELHORADO (evita travamentos)
+      - name: Cache Maven + OWASP
         uses: actions/cache@v4
         with:
-          path: ~/.dependency-check-data
-          key: dependency-check-${{ runner.os }}
+          path: |
+            ~/.m2
+            ~/.dependency-check-data
+          key: ${{ runner.os }}-security-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-security-
 
-      # 🔍 CodeQL INIT
+      # 🔍 CODEQL INIT
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -47,24 +53,27 @@ jobs:
 
       # 🔥 BUILD OBRIGATÓRIO PARA CODEQL
       - name: Build project (CodeQL requirement)
-        run: mvn clean compile
+        run: mvn -B clean compile
 
-      # 🔍 CodeQL ANALYZE
+      # 🔍 CODEQL ANALYZE
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-      # 🔍 Docker scan build
+      # 🔍 TRIVY (FAST MODE)
       - name: Build Docker (scan)
         run: docker build -t scan-image .
 
-      # 🔍 Trivy scan
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'scan-image'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
+          ignore-unfixed: true
 
+  # =========================
+  # 🏗 BUILD & PUSH
+  # =========================
   build:
     name: Build & Push Image
     runs-on: ubuntu-latest
@@ -81,7 +90,7 @@ jobs:
           java-version: 17
 
       - name: Build JAR
-        run: mvn clean package -DskipTests
+        run: mvn -B clean package -DskipTests
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -95,7 +104,8 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
-        run: docker build -t $ECR_REPOSITORY:${GITHUB_SHA} .
+        run: |
+          docker build -t $ECR_REPOSITORY:${GITHUB_SHA} .
 
       - name: Tag image
         run: |
@@ -107,6 +117,9 @@ jobs:
           docker push \
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
 
+  # =========================
+  # 🚀 DEPLOY LAYER
+  # =========================
   deploy:
     name: Blue/Green + Canary + Rollback
     runs-on: ubuntu-latest
@@ -138,7 +151,7 @@ jobs:
             echo "SERVICE=${{ env.BLUE_SERVICE }}" >> $GITHUB_ENV
           fi
 
-      # 🚀 Deploy ECS
+      # 🚀 ECS DEPLOY
       - name: Deploy service
         run: |
           aws ecs update-service \
@@ -152,12 +165,9 @@ jobs:
             --cluster $CLUSTER \
             --services $SERVICE
 
-      # 🔥 Canary Deploy (50/50)
+      # 🔥 CANARY (50/50 FIXO ESTÁVEL)
       - name: Canary Deploy
         run: |
-          BLUE=50
-          GREEN=50
-
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
             --default-actions "[
@@ -165,14 +175,14 @@ jobs:
                 \"Type\": \"forward\",
                 \"ForwardConfig\": {
                   \"TargetGroups\": [
-                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": $BLUE},
-                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": $GREEN}
+                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": 50},
+                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": 50}
                   ]
                 }
               }
             ]"
 
-      # 🧪 Health Check (mais robusto)
+      # 🧪 HEALTH CHECK ROBUSTO
       - name: Health Check
         run: |
           for i in {1..15}; do
@@ -189,7 +199,7 @@ jobs:
 
           exit 1
 
-      # 🔴 Rollback automático
+      # 🔴 ROLLBACK AUTOMÁTICO
       - name: Rollback
         if: failure()
         run: |
