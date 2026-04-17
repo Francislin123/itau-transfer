@@ -34,7 +34,6 @@
 
 ### Actuator health
 - http://localhost:8080/actuator/health
-- http://localhost:8080/actuator/health
 
 ### Aws Solution Architecture
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1776192524/mmfkxrihlnn7bglvloqd.png)
