@@ -1,89 +1,53 @@
-# 🔥 CANARY 10%
-- name: Canary 10%
-  run: |
-    if [ "${DEPLOY_COLOR}" == "green" ]; then
-      BLUE=90
-      GREEN=10
-    else
-      BLUE=10
-      GREEN=90
-    fi
+spring:
+  application:
+    name: transfer-api
 
-    aws elbv2 modify-listener \
-      --listener-arn "${{ secrets.LISTENER_ARN }}" \
-      --default-actions "[
-        {
-          \"Type\": \"forward\",
-          \"ForwardConfig\": {
-            \"TargetGroups\": [
-              {
-                \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
-                \"Weight\": $BLUE
-              },
-              {
-                \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
-                \"Weight\": $GREEN
-              }
-            ]
-          }
-        }
-      ]"
+  main:
+    lazy-initialization: true  # 🚀 reduz tempo de startup
 
-# 🧠 NOVO — HEALTH CHECK
-- name: Health check (canary validation)
-  id: health-check
-  run: |
-    echo "Validando saúde do serviço..."
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:transfer}
+    username: ${DB_USER:sa}
+    password: ${DB_PASS:sa}
+    driver-class-name: org.h2.Driver
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 5
+      initialization-fail-timeout: 0  # 🚀 evita delay na subida
 
-    for i in {1..10}; do
-      STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.HEALTH_URL }}")
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false  # 🚀 evita overhead desnecessário
 
-      echo "Status: $STATUS"
+server:
+  port: 8080
+  address: 0.0.0.0
+  forward-headers-strategy: framework
 
-      if [ "$STATUS" == "200" ]; then
-        echo "Saúde OK ✅"
-        exit 0
-      fi
+management:
+  server:
+    port: 8080
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never  # 🚀 health check mais leve
 
-      echo "Tentativa $i falhou..."
-      sleep 10
-    done
+logging:
+  level:
+    root: INFO
+    org.hibernate: WARN
+    org.springframework: WARN  # 🚀 reduz ruído e melhora performance
 
-    echo "Health check falhou ❌"
-    exit 1
-
-# 🔥 ROLLBACK AUTOMÁTICO
-- name: Rollback automático
-  if: failure()
-  run: |
-    echo "Iniciando rollback automático..."
-
-    if [ "${DEPLOY_COLOR}" == "green" ]; then
-      BLUE=100
-      GREEN=0
-    else
-      BLUE=0
-      GREEN=100
-    fi
-
-    aws elbv2 modify-listener \
-      --listener-arn "${{ secrets.LISTENER_ARN }}" \
-      --default-actions "[
-        {
-          \"Type\": \"forward\",
-          \"ForwardConfig\": {
-            \"TargetGroups\": [
-              {
-                \"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\",
-                \"Weight\": $BLUE
-              },
-              {
-                \"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\",
-                \"Weight\": $GREEN
-              }
-            ]
-          }
-        }
-      ]"
-
-    echo "Rollback concluído ✅"
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    use-root-path: true
