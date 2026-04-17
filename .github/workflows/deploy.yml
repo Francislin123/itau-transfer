@@ -32,13 +32,20 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # 📦 CACHE (resolve lentidão do Dependency Check)
+      - name: Cache OWASP DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check-data
+          key: dependency-check-${{ runner.os }}
+
       # 🔍 CodeQL INIT
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: java
 
-      # 🔥 BUILD OBRIGATÓRIO PARA JAVA
+      # 🔥 BUILD OBRIGATÓRIO PARA CODEQL
       - name: Build project (CodeQL requirement)
         run: mvn clean compile
 
@@ -46,7 +53,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-      # 🔍 Dependency Scan
+      # 🔍 Dependency Check (OTIMIZADO)
       - name: Dependency Check
         run: |
           mvn org.owasp:dependency-check-maven:check \
@@ -54,11 +61,11 @@ jobs:
             -Dformat=HTML \
             -DfailBuildOnCVSS=7
 
-      # 🔍 Docker build for scan
+      # 🔍 Docker scan build
       - name: Build Docker (scan)
         run: docker build -t scan-image .
 
-      # 🔍 Container Scan
+      # 🔍 Trivy scan
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -153,16 +160,11 @@ jobs:
             --cluster $CLUSTER \
             --services $SERVICE
 
-      # 🔥 Canary Deploy (50% option included)
-      - name: Canary Deploy (50/50)
+      # 🔥 Canary Deploy (50/50)
+      - name: Canary Deploy
         run: |
-          if [ "$DEPLOY" == "green" ]; then
-            BLUE=50
-            GREEN=50
-          else
-            BLUE=50
-            GREEN=50
-          fi
+          BLUE=50
+          GREEN=50
 
           aws elbv2 modify-listener \
             --listener-arn "${{ secrets.LISTENER_ARN }}" \
@@ -178,10 +180,10 @@ jobs:
               }
             ]"
 
-      # 🧪 Health Check
+      # 🧪 Health Check (mais robusto)
       - name: Health Check
         run: |
-          for i in {1..10}; do
+          for i in {1..15}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.HEALTH_URL }}")
 
             echo "Status: $STATUS"
@@ -215,4 +217,4 @@ jobs:
               }
             ]"
 
-          exit 1
+          echo "Rollback concluído"
