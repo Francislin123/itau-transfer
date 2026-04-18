@@ -23,11 +23,25 @@
 	<!-- 🔥 FORÇA DEPENDÊNCIA (JEITO CERTO) -->
 	<dependencyManagement>
 		<dependencies>
+
 			<dependency>
 				<groupId>org.apache.tomcat.embed</groupId>
 				<artifactId>tomcat-embed-core</artifactId>
-				<version>${tomcat.version}</version>
+				<version>10.1.30</version>
 			</dependency>
+
+			<dependency>
+				<groupId>org.apache.tomcat.embed</groupId>
+				<artifactId>tomcat-embed-el</artifactId>
+				<version>10.1.30</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.apache.tomcat.embed</groupId>
+				<artifactId>tomcat-embed-websocket</artifactId>
+				<version>10.1.30</version>
+			</dependency>
+
 		</dependencies>
 	</dependencyManagement>
 
