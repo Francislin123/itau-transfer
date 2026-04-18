@@ -63,6 +63,12 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
+      # 🔐 OWASP Dependency Check (com API KEY)
+      - name: OWASP Dependency Check
+        run: mvn -B dependency-check:check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
       # 🔍 TRIVY (FAST MODE)
       - name: Build Docker (scan)
         run: docker build -t scan-image .

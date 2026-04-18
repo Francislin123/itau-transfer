@@ -17,33 +17,7 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<tomcat.version>10.1.30</tomcat.version>
 	</properties>
-
-	<!-- 🔥 FORÇA DEPENDÊNCIA (JEITO CERTO) -->
-<!--	<dependencyManagement>-->
-<!--		<dependencies>-->
-
-<!--			<dependency>-->
-<!--				<groupId>org.apache.tomcat.embed</groupId>-->
-<!--				<artifactId>tomcat-embed-core</artifactId>-->
-<!--				<version>10.1.30</version>-->
-<!--			</dependency>-->
-
-<!--			<dependency>-->
-<!--				<groupId>org.apache.tomcat.embed</groupId>-->
-<!--				<artifactId>tomcat-embed-el</artifactId>-->
-<!--				<version>10.1.30</version>-->
-<!--			</dependency>-->
-
-<!--			<dependency>-->
-<!--				<groupId>org.apache.tomcat.embed</groupId>-->
-<!--				<artifactId>tomcat-embed-websocket</artifactId>-->
-<!--				<version>10.1.30</version>-->
-<!--			</dependency>-->
-
-<!--		</dependencies>-->
-<!--	</dependencyManagement>-->
 
 	<dependencies>
 
@@ -113,11 +87,13 @@
 	<build>
 		<plugins>
 
+			<!-- 🔥 SPRING BOOT -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 
+			<!-- 🔥 JUNIT -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -125,6 +101,35 @@
 				<configuration>
 					<useModulePath>false</useModulePath>
 				</configuration>
+			</plugin>
+
+			<!-- 🔐 OWASP DEPENDENCY CHECK -->
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>12.2.1</version>
+
+				<configuration>
+					<failBuildOnCVSS>10</failBuildOnCVSS>
+
+					<suppressionFiles>
+						<suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+					</suppressionFiles>
+
+					<!-- 🔥 CORREÇÃO DO 429 -->
+					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+					<nvdApiDelay>2000</nvdApiDelay>
+
+					<skipProvidedScope>true</skipProvidedScope>
+				</configuration>
+
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 		</plugins>

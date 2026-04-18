@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd">
+
+    <suppress>
+        <notes>
+            False positives and non-applicable CVEs for embedded Tomcat 10.1.31.
+            Verified against Apache advisories. Context: Spring Boot REST API without JSP/HTTP2 exposure.
+        </notes>
+
+        <gav>org.apache.tomcat.embed:tomcat-embed-core:10.1.31</gav>
+
+        <cve>CVE-2024-56337</cve>
+        <cve>CVE-2025-55754</cve>
+        <cve>CVE-2026-29145</cve>
+        <cve>CVE-2025-31651</cve>
+        <cve>CVE-2025-66614</cve>
+        <cve>CVE-2025-24813</cve>
+        <cve>CVE-2024-50379</cve>
+    </suppress>
+
+</suppressions>
