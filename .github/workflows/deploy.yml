@@ -45,6 +45,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-security-
 
+      # 🔥 LIMPA TOMCAT ANTIGO (CRÍTICO PRA CVE)
+      - name: Clean Maven Cache (Tomcat fix)
+        run: rm -rf ~/.m2/repository/org/apache/tomcat || true
+
       # 🔍 CODEQL INIT
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
