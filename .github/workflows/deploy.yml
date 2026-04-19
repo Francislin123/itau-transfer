@@ -41,8 +41,11 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
-      - name: Clean Tomcat cache
-        run: rm -rf ~/.m2/repository/org/apache/tomcat || true
+      # 🔥 CLEAN INTELIGENTE (Spring + Tomcat)
+      - name: Clean Maven cache (Spring + Tomcat)
+        run: |
+          rm -rf ~/.m2/repository/org/springframework || true
+          rm -rf ~/.m2/repository/org/apache/tomcat || true
 
       # 🔍 CODEQL
       - name: Init CodeQL
@@ -51,7 +54,7 @@ jobs:
           languages: java
 
       - name: Build (CodeQL)
-        run: mvn -B clean compile
+        run: mvn -B clean compile -U
 
       - name: Analyze CodeQL
         uses: github/codeql-action/analyze@v3
@@ -86,7 +89,7 @@ jobs:
           java-version: 17
 
       - name: Build JAR
-        run: mvn -B clean package -DskipTests
+        run: mvn -B clean package -DskipTests -U
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
