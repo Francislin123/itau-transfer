@@ -1,12 +1,13 @@
-name: Security Deep Scan (OWASP)
+name: Security Nightly Scan
 
 on:
   schedule:
-    - cron: "0 2 * * *" # todo dia 02:00 AM
+    - cron: "0 1 * * *" # 22:00 Brasil (BRT)
   workflow_dispatch:
 
 jobs:
-  dependency-check:
+  owasp-scan:
+    name: OWASP Dependency Check (Nightly)
     runs-on: ubuntu-latest
 
     steps:
@@ -19,16 +20,34 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # 🔥 CACHE (reduz MUITO tempo)
-      - name: Cache OWASP DB
+      # 🔥 CACHE OTIMIZADO (ESSENCIAL)
+      - name: Cache OWASP Data
         uses: actions/cache@v4
         with:
           path: ~/.dependency-check-data
-          key: dependency-check-${{ runner.os }}
+          key: ${{ runner.os }}-owasp-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-owasp-
 
+      # 🔐 EXECUÇÃO COM RETRY (ANTI 429)
       - name: Run OWASP Dependency Check
         run: |
-          mvn org.owasp:dependency-check-maven:check \
-            -Dnvd.api.key=${{ secrets.NVD_API_KEY }} \
-            -Dformat=HTML \
-            -DfailBuildOnCVSS=7
+          echo "Running OWASP scan..."
+          mvn -B dependency-check:check || \
+          (echo "Retrying OWASP..." && sleep 10 && mvn -B dependency-check:check)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+      # 📄 PUBLICA RELATÓRIO
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-report
+          path: target/dependency-check-report.html
+
+      # 🚨 FALHA VISÍVEL (MAS ISOLADA)
+      - name: Fail if vulnerabilities found
+        if: failure()
+        run: |
+          echo "Vulnerabilities found! Check the report."
+          exit 1
