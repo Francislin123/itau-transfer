@@ -2,7 +2,7 @@ name: Security Nightly Scan
 
 on:
   schedule:
-    - cron: "0 1 * * *" # 22:00 Brasil (BRT)
+    - cron: "40 1 * * *" # 22:40 Brasil (BRT)
   workflow_dispatch:
 
 jobs:
