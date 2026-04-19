@@ -44,7 +44,7 @@
 - CloudWatch: Used to monitor the health and performance of the AWS infrastructure. Collects metrics, logs, and events that can be used to make informed decisions about the scalability and performance of the application.
 
 ### DevSecOps CI/CD Pipeline com Blue/Green Deployment em AWS ECS
-![Captura de Tela 2019-05-12 às 15 18 49](https://res-console.cloudinary.com/duep7y7ve/thumbnails/v1/image/upload/v1776607924/cXZjbWVlcWUwaTB1ZHE1em5rc3U=/drilldown)
+![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/fl_preserve_transparency/v1776607924/qvcmeeqe0i0udq5znksu.jpg?_s=public-apps)
 
 ### About this Architecture
 - This architecture provides a highly scalable and resilient solution, capable of handling variable workloads and ensuring high availability. Additionally, the use of CloudWatch enables proactive monitoring of application health and performance, enabling informed decisions about infrastructure adjustments..
