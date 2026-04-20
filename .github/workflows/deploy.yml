@@ -212,6 +212,14 @@ jobs:
           done
           exit 1
 
+      # 🔐 DAST (OWASP ZAP)
+      - name: DAST Scan (OWASP ZAP)
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: ${{ secrets.HEALTH_URL }}
+          fail_action: true
+          cmd_options: "-a -T 5"
+
       # ✅ PROMOTION FINAL
       - name: Promote (100%)
         run: |
