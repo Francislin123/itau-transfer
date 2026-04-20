@@ -62,12 +62,13 @@ jobs:
       # =============================
       # 🔐 SNYK (SCA - DEPENDÊNCIAS)
       # =============================
-      - name: Snyk Scan (Dependencies)
-        uses: snyk/actions/maven@master
+      - name: Snyk Scan (isolated env)
+        run: |
+          unset LD_PRELOAD
+          export JAVA_HOME=$JAVA_HOME_17_X64
+          snyk test --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
 
       # 🔍 TRIVY (AGORA BLOQUEIA)
       - name: Build Docker (scan)
