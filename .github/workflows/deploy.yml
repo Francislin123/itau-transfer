@@ -59,6 +59,16 @@ jobs:
       - name: Analyze CodeQL
         uses: github/codeql-action/analyze@v3
 
+      # =============================
+      # 🔐 SNYK (SCA - DEPENDÊNCIAS)
+      # =============================
+      - name: Snyk Scan (Dependencies)
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
       # 🔍 TRIVY (AGORA BLOQUEIA)
       - name: Build Docker (scan)
         run: docker build -t scan-image .
