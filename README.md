@@ -3,8 +3,6 @@
 # Transfer API 🚀
 - Application responsible for controlling account transfer
 
-![CI State](https://github.com/Francislin123/itau-transfer/actions/workflows/maven.yml/badge.svg)
-
 ### Tech Stack
 
 | Categoria | Tecnologias |
