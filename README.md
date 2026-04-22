@@ -1,5 +1,7 @@
 [![DevSecOps Pipeline (AWS ECS Blue/Green)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml/badge.svg?branch=master)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml)
 
+[![Security Nightly Scan](https://github.com/Francislin123/itau-transfer/actions/workflows/security-nightly.yml/badge.svg)](https://github.com/Francislin123/itau-transfer/actions/workflows/security-nightly.yml)
+
 # Transfer API 🚀
 - Application responsible for controlling account transfer
 
