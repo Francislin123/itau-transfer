@@ -1,27 +1,31 @@
 [![DevSecOps Pipeline (AWS ECS Blue/Green)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml/badge.svg)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml)
-# Transfer API
+
+# Transfer API 🚀
 - Application responsible for controlling account transfer
 
-# Technologies
+![CI State](https://github.com/Francislin123/itau-transfer/actions/workflows/maven.yml/badge.svg)
 
-Java: ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
+### Tech Stack
 
-Spring: ![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=for-the-badge&logo=spring&logoColor=white)
+| Categoria | Tecnologias |
+| :--- | :--- |
+| **Linguagem** | ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white) |
+| **Framework** | ![Spring Boot 3.2.4](https://img.shields.io/badge/Spring%20Boot-3.2.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white) |
+| **API Doc** | ![OpenAPI](https://img.shields.io/badge/Spring%20Doc-2.5.0-6DB33F?style=for-the-badge&logo=openapi-initiative&logoColor=white) |
+| **Cloud (AWS)** | ![AWS Gateway](https://img.shields.io/badge/API%20Gateway-FF9900?style=for-the-badge&logo=amazon-api-gateway&logoColor=white) ![ELB](https://img.shields.io/badge/ELB-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white) ![CloudWatch](https://img.shields.io/badge/CloudWatch-FF9900?style=for-the-badge&logo=amazon-cloudwatch&logoColor=white) |
+| **Testes** | ![JUnit 4](https://img.shields.io/badge/JUnit-4.13.2-25A162?style=for-the-badge&logo=junit5&logoColor=white) ![Rest-Assured](https://img.shields.io/badge/Rest--Assured-5.4.0-blue?style=for-the-badge) |
+| **Cache** | ![Ehcache](https://img.shields.io/badge/Ehcache-2.6.11-orange?style=for-the-badge) |
+| **Tools** | ![Lombok](https://img.shields.io/badge/Lombok-red?style=for-the-badge) ![GSON](https://img.shields.io/badge/GSON-2.10.1-blue?style=for-the-badge) |
 
-AWS: ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+---
 
-- Java 17;
-- Springframework Boot 3.2.4;
-- HttpClient (Integration);
-- Lombok;
-- Google gson 2.10.1;
-- Spring doc open api 2.5.0;
-- Integration Test: Rest Assured 5.4.0;
-- Unit Test: Junit 4.13.2;
-- Design Patterns (Facade/Builder);
-- Ehcache core 2.6.11;
-- Hibernate ehcache 6.0.0.Alpha7;
-- AWS (API Gateway, Elastic Load Balancing (ELB), EC2 Auto Scaling e CloudWatch);
+### 🛠️ Especificações Técnicas
+
+- **Java 17 & Spring Boot 3.2.4**: Utilização das versões mais recentes para performance e suporte a records.
+- **HttpClient**: Implementação robusta para integrações externas.
+- **Design Patterns**: Aplicação de **Facade** para simplificar interfaces complexas e **Builder** para criação de objetos imutáveis.
+- **Caching Layer**: Estratégia de cache com **Ehcache** e integração via **Hibernate Second-level Cache** para otimização de consultas ao banco de dados.
+- **Cloud Infrastructure**: Arquitetura preparada para escalabilidade com **EC2 Auto Scaling** e monitoramento detalhado via **CloudWatch Logs & Metrics**.
 
 ### Cache
 - Caching was used for account and client search calls for better performance and to reduce the impact if the third-party API is out
