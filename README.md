@@ -79,7 +79,7 @@
 
 ---
 
-# ⭐ Se gostou do projeto
+# ⭐ If you liked the project
 
 Leave a **⭐ on the repository** to support development.
 
