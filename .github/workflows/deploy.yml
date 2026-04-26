@@ -1,263 +1,263 @@
-#name: DevSecOps Pipeline (AWS ECS Blue/Green)
-#
-#on:
-#  push:
-#    branches: ["master"]
-#  pull_request:
-#
-#env:
-#  AWS_REGION: us-east-2
-#  ECR_REPOSITORY: itau-transfer
-#  CLUSTER: itau-transfer-cluster
-#  GREEN_SERVICE: itau-transfer-service-green
-#  BLUE_SERVICE: itau-transfer-service
-#
-#jobs:
-#
-#  # =========================
-#  # 🔐 SECURITY LAYER
-#  # =========================
-#  security:
-#    name: Security Scans (DevSecOps Gate)
-#    runs-on: ubuntu-latest
-#
-#    permissions:
-#      contents: read
-#      security-events: write
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Set up Java
-#        uses: actions/setup-java@v4
-#        with:
-#          distribution: temurin
-#          java-version: 17
-#
-#      # 🔥 CACHE (REMOVIDO OWASP DATA)
-#      - name: Cache Maven
-#        uses: actions/cache@v4
-#        with:
-#          path: ~/.m2
-#          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-#
-#      # 🔥 CLEAN INTELIGENTE (Spring + Tomcat)
-#      - name: Clean Maven cache (Spring + Tomcat)
-#        run: |
-#          rm -rf ~/.m2/repository/org/springframework || true
-#          rm -rf ~/.m2/repository/org/apache/tomcat || true
-#
-#      # 🔍 CODEQL
-#      - name: Init CodeQL
-#        uses: github/codeql-action/init@v3
-#        with:
-#          languages: java
-#
-#      - name: Build (CodeQL)
-#        run: mvn -B clean compile -U
-#
-#      - name: Analyze CodeQL
-#        uses: github/codeql-action/analyze@v3
-#
-#      # =============================
-#      # 🔐 SNYK (SCA - DEPENDÊNCIAS)
-#      # =============================
-#      - name: Install Snyk
-#        run: npm install -g snyk
-#
-#      - name: Snyk Scan
-#        run: |
-#          unset LD_PRELOAD
-#          export JAVA_HOME=$JAVA_HOME_17_X64
-#          snyk test --severity-threshold=high
-#        env:
-#          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-#
-#      # 🔍 TRIVY (AGORA BLOQUEIA)
-#      - name: Build Docker (scan)
-#        run: docker build -t scan-image .
-#
-#      - name: Trivy Scan (fail on critical)
-#        uses: aquasecurity/trivy-action@master
-#        with:
-#          image-ref: 'scan-image'
-#          severity: 'CRITICAL,HIGH'
-#          exit-code: '1'
-#          ignore-unfixed: true
-#
-#  # =========================
-#  # 🏗 BUILD & PUSH
-#  # =========================
-#  build:
-#    name: Build & Push Image
-#    runs-on: ubuntu-latest
-#    needs: security
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Set up Java
-#        uses: actions/setup-java@v4
-#        with:
-#          distribution: temurin
-#          java-version: 17
-#
-#      - name: Build JAR
-#        run: mvn -B clean package -DskipTests -U
-#
-#      - name: Configure AWS
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#          aws-region: ${{ env.AWS_REGION }}
-#
-#      - name: Login ECR
-#        id: login-ecr
-#        uses: aws-actions/amazon-ecr-login@v2
-#
-#      - name: Build Docker image
-#        run: |
-#          docker build -t $ECR_REPOSITORY:latest .
-#          docker tag $ECR_REPOSITORY:latest $ECR_REPOSITORY:${GITHUB_SHA}
-#
-#      - name: Tag for ECR
-#        run: |
-#          docker tag $ECR_REPOSITORY:latest \
-#          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-#
-#          docker tag $ECR_REPOSITORY:${GITHUB_SHA} \
-#          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
-#
-#      - name: Push images
-#        run: |
-#          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-#          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
-#
-#  # =========================
-#  # 🚀 DEPLOY
-#  # =========================
-#  deploy:
-#    name: Blue/Green + Canary + Promotion + Rollback
-#    runs-on: ubuntu-latest
-#    needs: build
-#
-#    steps:
-#      - name: Configure AWS
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#          aws-region: ${{ env.AWS_REGION }}
-#
-#      # 🔍 Detect environment
-#      - name: Detect active env
-#        run: |
-#          CURRENT=$(aws elbv2 describe-listeners \
-#            --listener-arn "${{ secrets.LISTENER_ARN }}" \
-#            --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?Weight==\`100\`].TargetGroupArn" \
-#            --output text)
-#
-#          if [ "$CURRENT" == "${{ secrets.BLUE_TG_ARN }}" ]; then
-#            echo "DEPLOY=green" >> $GITHUB_ENV
-#            echo "SERVICE=${{ env.GREEN_SERVICE }}" >> $GITHUB_ENV
-#            echo "TARGET=${{ secrets.GREEN_TG_ARN }}" >> $GITHUB_ENV
-#          else
-#            echo "DEPLOY=blue" >> $GITHUB_ENV
-#            echo "SERVICE=${{ env.BLUE_SERVICE }}" >> $GITHUB_ENV
-#            echo "TARGET=${{ secrets.BLUE_TG_ARN }}" >> $GITHUB_ENV
-#          fi
-#
-#      # 🚀 Deploy ECS
-#      - name: Deploy ECS
-#        run: |
-#          aws ecs update-service \
-#            --cluster $CLUSTER \
-#            --service $SERVICE \
-#            --force-new-deployment
-#
-#      - name: Wait stable
-#        run: |
-#          aws ecs wait services-stable \
-#            --cluster $CLUSTER \
-#            --services $SERVICE
-#
-#      # 🔥 CANARY
-#      - name: Canary 50/50
-#        run: |
-#          aws elbv2 modify-listener \
-#            --listener-arn "${{ secrets.LISTENER_ARN }}" \
-#            --default-actions "[
-#              {
-#                \"Type\": \"forward\",
-#                \"ForwardConfig\": {
-#                  \"TargetGroups\": [
-#                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": 50},
-#                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": 50}
-#                  ]
-#                }
-#              }
-#            ]"
-#
-#      # 🧪 HEALTH CHECK
-#      - name: Health Check
-#        run: |
-#          for i in {1..15}; do
-#            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.HEALTH_URL }}")
-#            echo "Status: $STATUS"
-#            if [ "$STATUS" == "200" ]; then
-#              exit 0
-#            fi
-#            sleep 10
-#          done
-#          exit 1
-#
-#      # 🔐 DAST (OWASP ZAP)
-#      - name: ZAP Scan (DAST)
-#        uses: zaproxy/action-full-scan@v0.10.0
-#        with:
-#          target: ${{ secrets.HEALTH_URL }}
-#          fail_action: false
-#          cmd_options: "-config rules.alertThreshold=High"
-#
-#      # ✅ PROMOTION FINAL
-#      - name: Promote (100%)
-#        run: |
-#          aws elbv2 modify-listener \
-#            --listener-arn "${{ secrets.LISTENER_ARN }}" \
-#            --default-actions "[
-#              {
-#                \"Type\": \"forward\",
-#                \"ForwardConfig\": {
-#                  \"TargetGroups\": [
-#                    {\"TargetGroupArn\": \"$TARGET\", \"Weight\": 100}
-#                  ]
-#                }
-#              }
-#            ]"
-#
-#      # 🔴 ROLLBACK
-#      - name: Rollback
-#        if: failure()
-#        run: |
-#          if [ "$DEPLOY" == "green" ]; then
-#            BLUE=100
-#            GREEN=0
-#          else
-#            BLUE=0
-#            GREEN=100
-#          fi
-#
-#          aws elbv2 modify-listener \
-#            --listener-arn "${{ secrets.LISTENER_ARN }}" \
-#            --default-actions "[
-#              {
-#                \"Type\": \"forward\",
-#                \"ForwardConfig\": {
-#                  \"TargetGroups\": [
-#                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": $BLUE},
-#                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": $GREEN}
-#                  ]
-#                }
-#              }
-#            ]"
+name: DevSecOps Pipeline (AWS ECS Blue/Green)
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REPOSITORY: itau-transfer
+  CLUSTER: itau-transfer-cluster
+  GREEN_SERVICE: itau-transfer-service-green
+  BLUE_SERVICE: itau-transfer-service
+
+jobs:
+
+  # =========================
+  # 🔐 SECURITY LAYER
+  # =========================
+  security:
+    name: Security Scans (DevSecOps Gate)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # 🔥 CACHE (REMOVIDO OWASP DATA)
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+
+      # 🔥 CLEAN INTELIGENTE (Spring + Tomcat)
+      - name: Clean Maven cache (Spring + Tomcat)
+        run: |
+          rm -rf ~/.m2/repository/org/springframework || true
+          rm -rf ~/.m2/repository/org/apache/tomcat || true
+
+      # 🔍 CODEQL
+      - name: Init CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+
+      - name: Build (CodeQL)
+        run: mvn -B clean compile -U
+
+      - name: Analyze CodeQL
+        uses: github/codeql-action/analyze@v3
+
+      # =============================
+      # 🔐 SNYK (SCA - DEPENDÊNCIAS)
+      # =============================
+      - name: Install Snyk
+        run: npm install -g snyk
+
+      - name: Snyk Scan
+        run: |
+          unset LD_PRELOAD
+          export JAVA_HOME=$JAVA_HOME_17_X64
+          snyk test --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # 🔍 TRIVY (AGORA BLOQUEIA)
+      - name: Build Docker (scan)
+        run: docker build -t scan-image .
+
+      - name: Trivy Scan (fail on critical)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'scan-image'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          ignore-unfixed: true
+
+  # =========================
+  # 🏗 BUILD & PUSH
+  # =========================
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    needs: security
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build JAR
+        run: mvn -B clean package -DskipTests -U
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY:latest .
+          docker tag $ECR_REPOSITORY:latest $ECR_REPOSITORY:${GITHUB_SHA}
+
+      - name: Tag for ECR
+        run: |
+          docker tag $ECR_REPOSITORY:latest \
+          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+          docker tag $ECR_REPOSITORY:${GITHUB_SHA} \
+          ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
+
+      - name: Push images
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
+
+  # =========================
+  # 🚀 DEPLOY
+  # =========================
+  deploy:
+    name: Blue/Green + Canary + Promotion + Rollback
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 🔍 Detect environment
+      - name: Detect active env
+        run: |
+          CURRENT=$(aws elbv2 describe-listeners \
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --query "Listeners[0].DefaultActions[0].ForwardConfig.TargetGroups[?Weight==\`100\`].TargetGroupArn" \
+            --output text)
+
+          if [ "$CURRENT" == "${{ secrets.BLUE_TG_ARN }}" ]; then
+            echo "DEPLOY=green" >> $GITHUB_ENV
+            echo "SERVICE=${{ env.GREEN_SERVICE }}" >> $GITHUB_ENV
+            echo "TARGET=${{ secrets.GREEN_TG_ARN }}" >> $GITHUB_ENV
+          else
+            echo "DEPLOY=blue" >> $GITHUB_ENV
+            echo "SERVICE=${{ env.BLUE_SERVICE }}" >> $GITHUB_ENV
+            echo "TARGET=${{ secrets.BLUE_TG_ARN }}" >> $GITHUB_ENV
+          fi
+
+      # 🚀 Deploy ECS
+      - name: Deploy ECS
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service $SERVICE \
+            --force-new-deployment
+
+      - name: Wait stable
+        run: |
+          aws ecs wait services-stable \
+            --cluster $CLUSTER \
+            --services $SERVICE
+
+      # 🔥 CANARY
+      - name: Canary 50/50
+        run: |
+          aws elbv2 modify-listener \
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --default-actions "[
+              {
+                \"Type\": \"forward\",
+                \"ForwardConfig\": {
+                  \"TargetGroups\": [
+                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": 50},
+                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": 50}
+                  ]
+                }
+              }
+            ]"
+
+      # 🧪 HEALTH CHECK
+      - name: Health Check
+        run: |
+          for i in {1..15}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.HEALTH_URL }}")
+            echo "Status: $STATUS"
+            if [ "$STATUS" == "200" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      # 🔐 DAST (OWASP ZAP)
+      - name: ZAP Scan (DAST)
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: ${{ secrets.HEALTH_URL }}
+          fail_action: false
+          cmd_options: "-config rules.alertThreshold=High"
+
+      # ✅ PROMOTION FINAL
+      - name: Promote (100%)
+        run: |
+          aws elbv2 modify-listener \
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --default-actions "[
+              {
+                \"Type\": \"forward\",
+                \"ForwardConfig\": {
+                  \"TargetGroups\": [
+                    {\"TargetGroupArn\": \"$TARGET\", \"Weight\": 100}
+                  ]
+                }
+              }
+            ]"
+
+      # 🔴 ROLLBACK
+      - name: Rollback
+        if: failure()
+        run: |
+          if [ "$DEPLOY" == "green" ]; then
+            BLUE=100
+            GREEN=0
+          else
+            BLUE=0
+            GREEN=100
+          fi
+
+          aws elbv2 modify-listener \
+            --listener-arn "${{ secrets.LISTENER_ARN }}" \
+            --default-actions "[
+              {
+                \"Type\": \"forward\",
+                \"ForwardConfig\": {
+                  \"TargetGroups\": [
+                    {\"TargetGroupArn\": \"${{ secrets.BLUE_TG_ARN }}\", \"Weight\": $BLUE},
+                    {\"TargetGroupArn\": \"${{ secrets.GREEN_TG_ARN }}\", \"Weight\": $GREEN}
+                  ]
+                }
+              }
+            ]"
