@@ -21,11 +21,10 @@
 
 ### 🛠️ Especificações Técnicas
 
-- **Java 17 & Spring Boot 3.2.4**: Utilização das versões mais recentes para performance e suporte a records.
-- **HttpClient**: Implementação robusta para integrações externas.
-- **Design Patterns**: Aplicação de **Facade** para simplificar interfaces complexas e **Builder** para criação de objetos imutáveis.
-- **Caching Layer**: Estratégia de cache com **Ehcache** e integração via **Hibernate Second-level Cache** para otimização de consultas ao banco de dados.
-- **Cloud Infrastructure**: Arquitetura preparada para escalabilidade com **EC2 Auto Scaling** e monitoramento detalhado via **CloudWatch Logs & Metrics**.
+- **Java 17 & Spring Boot 3.2.4**: Utilizing the latest versions for performance and record support.
+- **HttpClient**: Robust implementation for external integrations.
+- **Design Patterns**: Application of **Facade** to simplify complex interfaces and **Builder** for creating immutable objects.
+- **Caching Layer**: Caching strategy with **Ehcache** and integration via **Hibernate Second-level Cache** for optimizing database queries.
 
 ### Cache
 - Caching was used for account and client search calls for better performance and to reduce the impact if the third-party API is out
@@ -48,7 +47,7 @@
 - http://localhost:8080/actuator/health
 
 ### Aws Solution Architecture
-![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1776192524/mmfkxrihlnn7bglvloqd.png)
+![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1777245365/11335669-9e27-41c3-ba7e-2ea2d397a55c_zeh2wn.png)
 
 - API Gateway: Used as an entry point for the application. It receives client requests and forwards them to the corresponding services.
 - Elastic Load Balancing (ELB): Distributes incoming traffic among EC2 instances. Ensures high availability and scalability by directing traffic only to healthy instances.
@@ -56,21 +55,32 @@
 - CloudWatch: Used to monitor the health and performance of the AWS infrastructure. Collects metrics, logs, and events that can be used to make informed decisions about the scalability and performance of the application.
 
 ### DevSecOps CI/CD Pipeline com Blue/Green Deployment em AWS ECS
-![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/fl_preserve_transparency/v1776607924/qvcmeeqe0i0udq5znksu.jpg?_s=public-apps)
+![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1777246352/3d31efb7-900a-4045-a123-6c81d72268ea_chbug2.png)
 
 ### About this Architecture
 - This architecture provides a highly scalable and resilient solution, capable of handling variable workloads and ensuring high availability. Additionally, the use of CloudWatch enables proactive monitoring of application health and performance, enabling informed decisions about infrastructure adjustments..
 
+### 📊 Observability
+![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1777239127/urk5tgbotg9bopujlsgc.png)
+
+- OpenTelemetry
+- Standardized telemetry collection (metrics, logs, traces).
+- OpenTelemetry Collector (Sidecar Pattern)
+- Processes and exports telemetry data.
+- Datadog
+
+---
+
 # 👨‍💻 Autor
 
-**Francislin**
+**Francislin Dos Reis**
 
-**Engenharia de Software**
+**Software Engineering**
 
 ---
 
 # ⭐ Se gostou do projeto
 
-Deixe uma **⭐ no repositório** para apoiar o desenvolvimento.
+Leave a **⭐ on the repository** to support development.
 
 ---

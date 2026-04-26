@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECS Task Definition - itau-transfer (com OpenTelemetry)
+
+Parameters:
+  ExecutionRoleArn:
+    Type: String
+
+  ContainerImage:
+    Type: String
+
+Resources:
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: itau-transfer-task
+      Cpu: "512"
+      Memory: "1024"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+
+      ExecutionRoleArn: !Ref ExecutionRoleArn
+
+      ContainerDefinitions:
+
+        #################################
+        # 🚀 APP PRINCIPAL
+        #################################
+        - Name: itau-transfer-container
+          Image: !Ref ContainerImage
+          Essential: true
+
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+
+          Environment:
+            - Name: SPRING_PROFILES_ACTIVE
+              Value: prod
+
+            # 🔥 OpenTelemetry
+            - Name: OTEL_SERVICE_NAME
+              Value: itau-transfer
+
+            - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+              Value: http://localhost:4317
+
+            - Name: OTEL_TRACES_EXPORTER
+              Value: otlp
+
+            - Name: OTEL_METRICS_EXPORTER
+              Value: otlp
+
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/itau-transfer
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: app
+
+          #################################
+          # ❤️ HEALTHCHECK (IMPORTANTE)
+          #################################
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost:8080/actuator/health || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 20
+
+        #################################
+        # 🔍 OTEL COLLECTOR (SIDECAR)
+        #################################
+        - Name: otel-collector
+          Image: otel/opentelemetry-collector:latest
+          Essential: true
+
+          PortMappings:
+            - ContainerPort: 4317
+              Protocol: tcp
+
+          Command:
+            - "--config=/etc/otel-config.yaml"
+
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/itau-transfer
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: otel
