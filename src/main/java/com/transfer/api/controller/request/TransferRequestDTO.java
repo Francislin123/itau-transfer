@@ -5,7 +5,7 @@ import lombok.Builder;
 @Builder
 public record TransferRequestDTO(
         String idCliente,
-        double valor,
+        Double valor,
         ContaRequestDto conta
 ) {
     /*

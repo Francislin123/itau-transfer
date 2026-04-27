@@ -1,21 +1,20 @@
 package com.transfer.api.controller.response;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
-public class TransferResponseDTO {
+import java.util.UUID;
 
-    private String idTransferencia;
-    private double limiteDiario;
-    private String msg;
-
-    @Builder
-    public TransferResponseDTO(String idTransferencia, double limiteDiario, String msg) {
-        this.idTransferencia = idTransferencia;
-        this.limiteDiario = limiteDiario;
-        this.msg = msg;
-    }
+@Builder
+public record TransferResponseDTO(
+        String idTransferencia,
+        double limiteDiario,
+        String msg
+) {
+    /*
+     * Records removem a necessidade de @Getter e @Setter.
+     * O acesso agora é feito via métodos:
+     * - response.idTransferencia()
+     * - response.limiteDiario()
+     * - response.msg()
+     */
 }

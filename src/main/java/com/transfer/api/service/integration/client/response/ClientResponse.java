@@ -5,9 +5,9 @@ import lombok.Builder;
 @Builder
 public record ClientResponse(
         String id,
-        String name,
-        String phone,
-        String personType,
+        String nome,
+        String telefone,
+        String tipoPessoa,
         String error // Added to support the fallback message from your ClientImpl
 ) {
     /**

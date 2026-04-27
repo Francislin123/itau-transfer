@@ -7,7 +7,7 @@ import com.transfer.api.service.integration.client.response.ClientResponse;
 
 public class Templates {
 
-    public static AccountOriginResponse getAccountOriginResponse() {
+    public static AccountOriginResponse getAccountOriginResponseBuilder() {
         return AccountOriginResponse.builder()
                 .id("d0d32142-74b7-4aca-9c68-838aeacef96b")
                 .saldo(500.0)

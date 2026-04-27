@@ -32,7 +32,7 @@ public class NotificationBacenImpl implements NotificationBacen {
         log.info("Starting Bacen notification for transfer: {}", notification.id());
 
         String json = gson.toJson(notification);
-        String uriNotification = "http://localhost:8080/notificacoes";
+        String uriNotification = "http://localhost:9090/notificacoes";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .header("Content-Type", "application/json")

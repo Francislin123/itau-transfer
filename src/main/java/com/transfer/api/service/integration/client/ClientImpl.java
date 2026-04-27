@@ -33,7 +33,7 @@ public class ClientImpl implements Client {
     public ClientResponse validateIfTheClientExists(final String idClient) {
         log.info("Validating existence for client ID: {}", idClient);
 
-        String uriClient = "http://localhost:8080/clientes/" + idClient;
+        String uriClient = "http://localhost:9090/clientes/" + idClient;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()

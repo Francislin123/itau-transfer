@@ -4,8 +4,8 @@ import lombok.Builder;
 
 @Builder
 public record ContaRequestDto(
-        String originId,
-        String destinationId
+        String idOrigem,
+        String idDestino
 ) {
     /*
      * Records automatically provide:

@@ -1,0 +1,12 @@
+version: '3'
+services:
+  wiremock:
+    image: wiremock/wiremock:3.5.2 # 🚀 Imagem oficial e atualizada
+    container_name: transfer-api-mocks
+    ports:
+      - "9090:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+    command:
+      - --verbose
+      - --global-response-templating # Útil para simular IDs dinâmicos

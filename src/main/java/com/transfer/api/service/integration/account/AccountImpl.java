@@ -30,12 +30,12 @@ public class AccountImpl implements Account {
     @Override
     @Cacheable(cacheNames = "searchSourceAccountData")
     @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "fallbackSearchAccount")
-    public AccountOriginResponse searchSourceAccountData(final String idAccountOrigin) {
+    public AccountOriginResponse searchSourceAccountData(final String idAccount) {
 
-        log.info("Calling account integration for ID: {}", idAccountOrigin);
+        log.info("Calling account integration for ID: {}", idAccount);
 
         // Ideally sourced from @Value or Config Server
-        String uriTransferAccountOrigin = "http://localhost:8080/contas/" + idAccountOrigin;
+        String uriTransferAccountOrigin = "http://localhost:9090/contas/" + idAccount;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
@@ -47,7 +47,7 @@ public class AccountImpl implements Account {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 404) {
-                log.info("Account {} not found (404).", idAccountOrigin);
+                log.info("Account {} not found (404).", idAccount);
                 return AccountOriginResponse.builder().build();
             }
 

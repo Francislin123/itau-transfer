@@ -35,16 +35,113 @@
 - 3 - java -jar transfer-api-0.0.1-SNAPSHOT.jar --spring.config.location = file: C: /Config/application.yml
 
 ### Documentation for testing api (Swagger)
-- http://localhost:8077/swagger-ui/index.html#/
+- http://localhost:8090/swagger-ui/index.html#/
 
-### Registration APIs, accounts, and Central Bank of Brazil (BACEN). 
-- To run this application, it is necessary to have 
-- another API running on your machine that provides account information from the Central Bank of Brazil (BACEN). 
-- This API can be found at the link below.
-- https://github.com/mllcarvalho/DesafioItau
+### Building Containers with Docker Compose
+- In the project root, where the docker-compose.yml file is located, run the command below to build and start all Wiremock containers defined in Docker Compose:
+```bash
+  docker-compose up --build -d
+```
+
+## GET Mock Client
+
+http://localhost:9090/clientes/bcdd1048-a501-4608-bc82-66d7b4db3600
+
+http://localhost:9090/clientes/2ceb26e9-7b5c-417e-bf75-ffaa66e3a76f
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "id": "bcdd1048-a501-4608-bc82-66d7b4db3600",
+                "nome": "João Silva",
+                "telefone": "912348765",
+                "tipoPessoa": "Fisica"
+            }
+
+## GET Mock Contas
+
+http://localhost:9090/contas/d0d32142-74b7-4aca-9c68-838aeacef96b
+
+http://localhost:9090/contas/41313d7b-bd75-4c75-9dea-1f4be434007f
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "id": "d0d32142-74b7-4aca-9c68-838aeacef96b,
+                "saldo": 5000.00
+                "ativo": true
+                "limiteDiario": 500.00
+            }
+
+## PUT Mock Contas - Atualiza Saldo
+
+http://localhost:9090/contas/saldos
+
++ Request (application/json)
+
+    + Body
+
+            {
+              "valor": 1000.00,
+              "conta": {
+                  "idOrigem": "d0d32142-74b7-4aca-9c68-838aeacef96b",
+                  "idDestino": "41313d7b-bd75-4c75-9dea-1f4be434007f"
+              }
+            }
+
++ Response 204 - No content (application/json)
+
+## POST Mock Bacen
+
+http://localhost:9090/notificacoes
+
++ Request (application/json)
+
+    + Body
+
+            {
+              "valor": 1000.00,
+              "conta": {
+                  "idOrigem": "d0d32142-74b7-4aca-9c68-838aeacef96b",
+                  "idDestino": "41313d7b-bd75-4c75-9dea-1f4be434007f"
+              }
+            }
+
++ Response 204 - No Content (application/json)
+
+## POST API Transferência
+
+http://localhost:8090/transfer
+
++ Request (application/json)
+
+    + Body
+
+            {
+              "idCliente": "2ceb26e9-7b5c-417e-bf75-ffaa66e3a76f",
+              "valor": 1000.00,
+              "conta": {
+                  "idOrigem": "d0d32142-74b7-4aca-9c68-838aeacef96b",
+                  "idDestino": "41313d7b-bd75-4c75-9dea-1f4be434007f"
+              }
+            }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "idTransferencia": "410bb5b0-429f-46b1-8621-b7da101b1e28"
+                "limiteDiario": 500.0,
+                "msg": "Transfer completed successfully."
+            }
 
 ### Actuator health
-- http://localhost:8080/actuator/health
+- http://localhost:8090/actuator/health
 
 ### Aws Solution Architecture
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1777245365/11335669-9e27-41c3-ba7e-2ea2d397a55c_zeh2wn.png)
