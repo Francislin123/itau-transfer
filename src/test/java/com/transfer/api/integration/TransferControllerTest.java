@@ -75,8 +75,8 @@ public class TransferControllerTest {
     private static String getClientOK() {
 
         ContaRequestDto contaRequestDto = ContaRequestDto.builder()
-                .idOrigem("d0d32142-74b7-4aca-9c68-838aeacef96b")
-                .idDestino("41313d7b-bd75-4c75-9dea-1f4be434007f")
+                .originId("d0d32142-74b7-4aca-9c68-838aeacef96b")
+                .destinationId("41313d7b-bd75-4c75-9dea-1f4be434007f")
                 .build();
 
         TransferRequestDTO transferRequestDTO = TransferRequestDTO.builder()
@@ -91,8 +91,8 @@ public class TransferControllerTest {
     private static String makeTransferOk200ReturnCustomerDailyLimit() {
 
         ContaRequestDto contaRequestDto = ContaRequestDto.builder()
-                .idOrigem("d0d32142-74b7-4aca-9c68-838aeacef96b")
-                .idDestino("41313d7b-bd75-4c75-9dea-1f4be434007f")
+                .originId("d0d32142-74b7-4aca-9c68-838aeacef96b")
+                .destinationId("41313d7b-bd75-4c75-9dea-1f4be434007f")
                 .build();
 
         TransferRequestDTO transferRequestDTO = TransferRequestDTO.builder()
@@ -107,8 +107,8 @@ public class TransferControllerTest {
     private static String getClientNotFoundClient() {
 
         ContaRequestDto contaRequestDto = ContaRequestDto.builder()
-                .idOrigem("d0d32142-74b7-4aca-9c68-838aeacef96")
-                .idDestino("41313d7b-bd75-4c75-9dea-1f4be434007f")
+                .originId("d0d32142-74b7-4aca-9c68-838aeacef96")
+                .destinationId("41313d7b-bd75-4c75-9dea-1f4be434007f")
                 .build();
 
         TransferRequestDTO transferRequestDTO = TransferRequestDTO.builder()

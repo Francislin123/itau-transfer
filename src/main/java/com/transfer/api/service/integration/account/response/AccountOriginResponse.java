@@ -1,27 +1,19 @@
 package com.transfer.api.service.integration.account.response;
 
 import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
-@Data
-public class AccountOriginResponse {
-    private String id;
-    private double saldo;
-    private double limiteDiario;
-    private boolean ativo;
-
-    public AccountOriginResponse() {
-    }
-
-    @Builder
-    public AccountOriginResponse(String id, double saldo, double limiteDiario, boolean ativo) {
-        this.id = id;
-        this.saldo = saldo;
-        this.limiteDiario = limiteDiario;
-        this.ativo = ativo;
-    }
+@Builder
+public record AccountOriginResponse(
+        String id,
+        String erro,
+        double saldo,
+        double limiteDiario,
+        boolean ativo
+) {
+    /* * The canonical constructor and @Builder are handled by Lombok.
+     * Records automatically provide:
+     * - Private final fields
+     * - Getter-like methods: id(), erro(), saldo(), etc.
+     * - toString(), equals(), and hashCode()
+     */
 }

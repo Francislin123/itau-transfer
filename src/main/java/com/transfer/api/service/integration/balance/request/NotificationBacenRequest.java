@@ -2,18 +2,29 @@ package com.transfer.api.service.integration.balance.request;
 
 import com.transfer.api.controller.request.ContaRequestDto;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
-public class NotificationBacenRequest {
-    private double valor;
-    private ContaRequestDto conta;
+import java.util.UUID;
 
-    @Builder
+@Builder
+public record NotificationBacenRequest(
+        UUID id,
+        double valor,
+        ContaRequestDto conta
+) {
+    /**
+     * Compact Constructor:
+     * If the ID is null during instantiation, it automatically generates a new UUID.
+     */
+    public NotificationBacenRequest {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+    }
+
+    /**
+     * Optional: Helper constructor for quick instantiation without manual ID.
+     */
     public NotificationBacenRequest(double valor, ContaRequestDto conta) {
-        this.valor = valor;
-        this.conta = conta;
+        this(UUID.randomUUID(), valor, conta);
     }
 }

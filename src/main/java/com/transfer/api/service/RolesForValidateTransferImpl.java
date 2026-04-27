@@ -9,80 +9,82 @@ import com.transfer.api.service.integration.balance.request.NotificationBacenReq
 import com.transfer.api.service.integration.client.Client;
 import com.transfer.api.service.integration.client.response.ClientResponse;
 import com.transfer.api.service.integration.transfer.TransferClient;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.transfer.api.util.CheckTransfer.checkTransfer;
 import static com.transfer.api.util.CheckTransfer.isaBoolean;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class RolesForValidateTransferImpl implements RolesForValidateTransfer {
 
-    @Autowired
-    private Client client;
+    private final Client client;
+    private final Account account;
+    private final TransferClient transferClient;
+    private final NotificationBacen notificationBacen;
 
-    @Autowired
-    private Account account;
+    private static final String TRANSFER_SERVICE = "transferOrchestrator";
 
-    @Autowired
-    private TransferClient transferClient;
-
-    @Autowired
-    private NotificationBacen notificationBacen;
-
+    @Override
     public TransferResponseDTO rolesForValidateTransfer(TransferRequestDTO transferRequestDTO) {
 
-        AccountOriginResponse accountOrigin;
-
-        final ClientResponse clientResponse;
-
-        String idTransferFinal;
+        log.info("Starting orchestrated transfer validation for client: {}", transferRequestDTO.idCliente());
 
         try {
+            // 🚀 PARALLEL EXECUTION: Running Client and Account checks at the same time
+            var clientFuture = CompletableFuture.supplyAsync(() ->
+                    this.client.validateIfTheClientExists(transferRequestDTO.idCliente()));
 
-            clientResponse = CompletableFuture.completedFuture(
-                    this.client.validateIfTheClientExists(
-                            transferRequestDTO.getIdCliente())).get(5, TimeUnit.SECONDS);
+            var accountFuture = CompletableFuture.supplyAsync(() ->
+                    this.account.searchSourceAccountData(transferRequestDTO.conta().originId()));
 
-            if (clientResponse.getId() == null) {
-                return TransferResponseDTO.builder().build();
+            // Wait for both with a global timeout
+            CompletableFuture.allOf(clientFuture, accountFuture).get(7, TimeUnit.SECONDS);
+
+            ClientResponse clientResponse = clientFuture.join();
+            AccountOriginResponse accountOrigin = accountFuture.join();
+
+            // 1. Validation Logic
+            if (clientResponse.id() == null) {
+                log.warn("Transfer denied: Client record not found.");
+                return TransferResponseDTO.builder().msg("Client not found").build();
             }
 
-            accountOrigin = CompletableFuture.completedFuture(
-                    this.account.searchSourceAccountData(
-                            transferRequestDTO.getConta().getIdOrigem())).get(5, TimeUnit.SECONDS);
-
-            final boolean checkTransfer = checkTransfer(accountOrigin.getLimiteDiario(), transferRequestDTO.getValor());
-
-            if (checkTransfer) {
-                return TransferResponseDTO.builder().limiteDiario(accountOrigin.getLimiteDiario()).build();
+            if (checkTransfer(accountOrigin.limiteDiario(), transferRequestDTO.valor())) {
+                log.warn("Transfer denied: Insufficient daily limit.");
+                return TransferResponseDTO.builder()
+                        .limiteDiario(accountOrigin.limiteDiario())
+                        .msg("Daily limit exceeded")
+                        .build();
             }
 
-            idTransferFinal = CompletableFuture.completedFuture(
-                    this.transferClient.transferSend(transferRequestDTO)).get(5, TimeUnit.SECONDS);
+            // 2. Execution
+            String idTransferFinal = this.transferClient.transferSend(transferRequestDTO);
 
+            // 3. Post-processing (Asynchronous notification)
             if (isaBoolean(transferRequestDTO, accountOrigin)) {
-
                 this.notificationBacen.notificationBacen(NotificationBacenRequest.builder()
-                        .valor(transferRequestDTO.getValor())
-                        .conta(transferRequestDTO.getConta())
+                        .valor(transferRequestDTO.valor())
+                        .conta(transferRequestDTO.conta())
                         .build());
             }
 
-        } catch (RuntimeException | TimeoutException | ExecutionException | InterruptedException e) {
             return TransferResponseDTO.builder()
-                    .msg("Service unavailable we are working to stabilize")
+                    .limiteDiario(accountOrigin.limiteDiario())
+                    .idTransferencia(idTransferFinal)
                     .build();
-        }
 
-        return TransferResponseDTO.builder()
-                .limiteDiario(accountOrigin.getLimiteDiario())
-                .idTransferencia(idTransferFinal)
-                .build();
+        } catch (Exception e) {
+            log.error("Orchestration error: {}", e.getMessage());
+            // Rethrowing so the Circuit Breaker can track the failure
+            throw new RuntimeException("Orchestration failed", e);
+        }
     }
 }

@@ -3,7 +3,7 @@ spring:
     name: transfer-api
 
   main:
-    lazy-initialization: true  # 🚀 reduz tempo de startup
+    lazy-initialization: true  # 🚀 reduces startup time
 
   datasource:
     url: ${DB_URL:jdbc:h2:mem:transfer}
@@ -13,22 +13,22 @@ spring:
     hikari:
       minimum-idle: 1
       maximum-pool-size: 5
-      initialization-fail-timeout: 0  # 🚀 evita delay na subida
+      initialization-fail-timeout: 0  # 🚀 avoids startup delay
 
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: false
-    open-in-view: false  # 🚀 evita overhead desnecessário
+    open-in-view: false  # 🚀 avoids unnecessary overhead
 
 server:
-  port: 8080
+  port: 8090
   address: 0.0.0.0
   forward-headers-strategy: framework
 
 management:
   server:
-    port: 8080
+    port: 8090
   endpoints:
     web:
       base-path: /actuator
@@ -38,16 +38,56 @@ management:
     health:
       probes:
         enabled: true
-      show-details: never  # 🚀 health check mais leve
+      show-details: never  # 🚀 lightweight health check
 
 logging:
   level:
     root: INFO
     org.hibernate: WARN
-    org.springframework: WARN  # 🚀 reduz ruído e melhora performance
+    org.springframework: WARN  # 🚀 reduces noise and improves performance
 
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
     disable-swagger-default-url: true
     use-root-path: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+    instances:
+      # 👤 Client Validation (fallbackValidateClient)
+      clientService:
+        baseConfig: default
+        slidingWindowSize: 15
+
+      # 💳 Account Integration (fallbackSearchAccount)
+      accountService:
+        baseConfig: default
+
+      # 🏦 External Regulatory Notification (fallbackBacenNotification)
+      bacenService:
+        baseConfig: default
+        slidingWindowSize: 20
+        waitDurationInOpenState: 15000
+
+      # ⚙️ Global Orchestration Layer (fallbackTransferOrchestration)
+      transferOrchestrator:
+        baseConfig: default
+        waitDurationInOpenState: 20000
+
+      # 🚀 Core Transfer Execution (fallbackTransferSend)
+      transferSendService:
+        baseConfig: default
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30000     # 30s wait to prevent duplicate processing during instability

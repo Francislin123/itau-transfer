@@ -2,6 +2,7 @@ package com.transfer.api.service.integration.account;
 
 import com.google.gson.Gson;
 import com.transfer.api.service.integration.account.response.AccountOriginResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -18,43 +19,65 @@ import java.time.Duration;
 public class AccountImpl implements Account {
 
     private final Gson gson = new Gson();
+    private static final String ACCOUNT_SERVICE = "accountService";
 
-    private static final HttpClient httpClient =
-            HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
+    // HttpClient configured with strict timeout to avoid blocking Fargate threads
+    private static final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(Duration.ofSeconds(3))
+            .build();
 
     @Override
     @Cacheable(cacheNames = "searchSourceAccountData")
+    @CircuitBreaker(name = ACCOUNT_SERVICE, fallbackMethod = "fallbackSearchAccount")
     public AccountOriginResponse searchSourceAccountData(final String idAccountOrigin) {
 
-        final String bodyResultFinal;
+        log.info("Calling account integration for ID: {}", idAccountOrigin);
+
+        // Ideally sourced from @Value or Config Server
+        String uriTransferAccountOrigin = "http://localhost:8080/contas/" + idAccountOrigin;
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(uriTransferAccountOrigin))
+                .timeout(Duration.ofSeconds(5))
+                .build();
 
         try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            String uriTransferAccountOrigin = "http://localhost:9090/contas/";
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .GET().uri(URI.create(uriTransferAccountOrigin + idAccountOrigin)).build();
-
-            final HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            // print status code
-            final int statusCode = response.statusCode();
-
-            if (statusCode == 404) {
-                log.info("Account origin not found for id: " + idAccountOrigin);
+            if (response.statusCode() == 404) {
+                log.info("Account {} not found (404).", idAccountOrigin);
                 return AccountOriginResponse.builder().build();
             }
 
-            // print response body
-            bodyResultFinal = response.body();
+            if (response.statusCode() >= 400) {
+                // Throwing RuntimeException triggers the Circuit Breaker failure count
+                throw new RuntimeException("Account service returned status: " + response.statusCode());
+            }
+
+            return this.gson.fromJson(response.body(), AccountOriginResponse.class);
 
         } catch (IOException | InterruptedException e) {
-            log.trace("Error with integration " + "idAccountOrigin: " + idAccountOrigin, e);
-            throw new RuntimeException(e);
+            log.error("Connection error with account service: {}", e.getMessage());
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            throw new RuntimeException("I/O communication failure", e);
         }
+    }
 
-        AccountOriginResponse accountOriginResponse = this.gson.fromJson(bodyResultFinal, AccountOriginResponse.class);
-        log.info("Account origin successfully found by id: " + accountOriginResponse.getId());
-        return accountOriginResponse;
+    /**
+     * Fallback triggered when:
+     * 1. The circuit is OPEN
+     * 2. The original method throws an exception
+     */
+    public AccountOriginResponse fallbackSearchAccount(String idAccountOrigin, Throwable e) {
+        log.error("Fallback triggered for account {}. Reason: {}", idAccountOrigin, e.getMessage());
+
+        // Returns an object with an error message indicating unavailability
+        // so the business layer can handle it (e.g., prevent the transfer)
+        return AccountOriginResponse.builder()
+                .id(idAccountOrigin)
+                .erro("Information temporarily unavailable")
+                .build();
     }
 }

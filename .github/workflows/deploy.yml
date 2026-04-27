@@ -28,26 +28,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Setting up the Java Environment
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # 🔥 CACHE (REMOVIDO OWASP DATA)
+      # 🔥 CACHE (OWASP DATA REMOVED)
       - name: Cache Maven
         uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
-      # 🔥 CLEAN INTELIGENTE (Spring + Tomcat)
+      # 🔥 SMART CLEAN (Spring + Tomcat) - Removes specific artifacts to prevent corruption
       - name: Clean Maven cache (Spring + Tomcat)
         run: |
           rm -rf ~/.m2/repository/org/springframework || true
           rm -rf ~/.m2/repository/org/apache/tomcat || true
 
-      # 🔍 CODEQL
+      # 🔍 CODEQL (Static Analysis)
       - name: Init CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -60,7 +61,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
       # =============================
-      # 🔐 SNYK (SCA - DEPENDÊNCIAS)
+      # 🔐 SNYK (SCA - DEPENDENCIES)
       # =============================
       - name: Install Snyk
         run: npm install -g snyk
@@ -73,7 +74,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # 🔍 TRIVY (AGORA BLOQUEIA)
+      # 🔍 TRIVY (BLOCKING MODE) - Container Vulnerability Scan
       - name: Build Docker (scan)
         run: docker build -t scan-image .
 
@@ -150,7 +151,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 🔍 Detect environment
+      # 🔍 Detect environment (Checks which Target Group currently has 100% weight)
       - name: Detect active env
         run: |
           CURRENT=$(aws elbv2 describe-listeners \
@@ -168,7 +169,7 @@ jobs:
             echo "TARGET=${{ secrets.BLUE_TG_ARN }}" >> $GITHUB_ENV
           fi
 
-      # 🚀 Deploy ECS
+      # 🚀 Deploy to ECS
       - name: Deploy ECS
         run: |
           aws ecs update-service \
@@ -176,13 +177,13 @@ jobs:
             --service $SERVICE \
             --force-new-deployment
 
-      - name: Wait stable
+      - name: Wait for stability
         run: |
           aws ecs wait services-stable \
             --cluster $CLUSTER \
             --services $SERVICE
 
-      # 🔥 CANARY
+      # 🔥 CANARY RELEASE (50/50 Traffic Split)
       - name: Canary 50/50
         run: |
           aws elbv2 modify-listener \
@@ -199,7 +200,7 @@ jobs:
               }
             ]"
 
-      # 🧪 HEALTH CHECK
+      # 🧪 HEALTH CHECK (Validating endpoint response)
       - name: Health Check
         run: |
           for i in {1..15}; do
@@ -212,7 +213,7 @@ jobs:
           done
           exit 1
 
-      # 🔐 DAST (OWASP ZAP)
+      # 🔐 DAST (OWASP ZAP Dynamic Scanning)
       - name: ZAP Scan (DAST)
         uses: zaproxy/action-full-scan@v0.10.0
         with:
@@ -220,7 +221,7 @@ jobs:
           fail_action: false
           cmd_options: "-config rules.alertThreshold=High"
 
-      # ✅ PROMOTION FINAL
+      # ✅ FINAL PROMOTION (100% Traffic to the new version)
       - name: Promote (100%)
         run: |
           aws elbv2 modify-listener \
@@ -236,7 +237,7 @@ jobs:
               }
             ]"
 
-      # 🔴 ROLLBACK
+      # 🔴 ROLLBACK (Triggered on failure to restore previous traffic state)
       - name: Rollback
         if: failure()
         run: |
