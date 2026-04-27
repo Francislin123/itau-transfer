@@ -24,12 +24,37 @@
 | **Security (SCA)** | ![OWASP Dependency Check](https://img.shields.io/badge/OWASP-Dependency%20Check-black?style=for-the-badge&logo=owasp&logoColor=white) |
 | **Build Tool** | ![Maven](https://img.shields.io/badge/Apache%20Maven-Build-red?style=for-the-badge&logo=apachemaven&logoColor=white) |
 
-### 🛠️ Especificações Técnicas
+## 🛠️ Technical Specifications
 
-- **Java 17 & Spring Boot 3.2.4**: Utilizing the latest versions for performance and record support.
-- **HttpClient**: Robust implementation for external integrations.
-- **Design Patterns**: Application of **Facade** to simplify complex interfaces and **Builder** for creating immutable objects.
-- **Caching Layer**: Caching strategy with **Ehcache** and integration via **Hibernate Second-level Cache** for optimizing database queries.
+- **Java 21 & Spring Boot 3.5.13**  
+  Leveraging the latest LTS version of Java for improved performance, virtual threads readiness, and modern language features (Records, Pattern Matching).
+
+- **HTTP Client Integration**  
+  Robust implementation for external service communication, designed for scalability and fault tolerance.
+
+- **Design Patterns**  
+  Application of industry-standard patterns such as:
+    - **Facade** → simplifies complex subsystem interactions
+    - **Builder** → ensures immutable and well-structured object creation
+
+- **Resilience Layer**  
+  Implemented using **Resilience4j (2.2.0)** with:
+    - Circuit Breaker
+    - Retry
+    - Timeout  
+      Ensuring fault tolerance in distributed systems.
+
+- **Caching Layer**  
+  Efficient caching strategy using **Ehcache**, integrated with **Hibernate Second-Level Cache** to reduce database load and improve performance.
+
+- **Observability**  
+  Integrated with **Spring Boot Actuator** for health checks, metrics, and production monitoring readiness.
+
+- **Data Persistence**  
+  Using **Spring Data JPA** with in-memory **H2 Database** for development and testing environments.
+
+- **API Documentation**  
+  Automated API documentation using **SpringDoc OpenAPI (2.6.0)**.
 
 ### Cache
 - Caching was used for account and client search calls for better performance and to reduce the impact if the third-party API is out
