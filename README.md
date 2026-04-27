@@ -60,7 +60,7 @@ http://localhost:9090/clientes/2ceb26e9-7b5c-417e-bf75-ffaa66e3a76f
                 "tipoPessoa": "Fisica"
             }
 
-## GET Mock Contas
+## GET Mock Accounts
 
 http://localhost:9090/contas/d0d32142-74b7-4aca-9c68-838aeacef96b
 
@@ -77,7 +77,7 @@ http://localhost:9090/contas/41313d7b-bd75-4c75-9dea-1f4be434007f
                 "limiteDiario": 500.00
             }
 
-## PUT Mock Contas - Atualiza Saldo
+## PUT Mock Accounts - Update Balance
 
 http://localhost:9090/contas/saldos
 
@@ -113,7 +113,7 @@ http://localhost:9090/notificacoes
 
 + Response 204 - No Content (application/json)
 
-## POST API Transferência
+## POST API Transfer
 
 http://localhost:8090/transfer
 
