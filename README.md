@@ -1,4 +1,4 @@
-[![DevSecOps Pipeline (AWS ECS Blue/Green)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml/badge.svg)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml)
+[![DevSecOps Pipeline (AWS ECS Blue/Green)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml/badge.svg?event=push)](https://github.com/Francislin123/itau-transfer/actions/workflows/deploy.yml)
 
 [![Security Nightly Scan](https://github.com/Francislin123/itau-transfer/actions/workflows/security-nightly.yml/badge.svg)](https://github.com/Francislin123/itau-transfer/actions/workflows/security-nightly.yml)
 
