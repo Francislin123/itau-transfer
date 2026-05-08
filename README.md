@@ -67,6 +67,9 @@
 ### Documentation for testing api (Swagger)
 - http://localhost:8090/swagger-ui/index.html#/
 
+### Actuator health
+- http://localhost:8090/actuator/health
+
 ### Building Containers with Docker Compose
 - In the project root, where the docker-compose.yml file is located, run the command below to build and start all Wiremock containers defined in Docker Compose:
 ```bash
@@ -170,22 +173,15 @@ http://localhost:8090/transfer
                 "msg": "Transfer completed successfully."
             }
 
-### Actuator health
-- http://localhost:8090/actuator/health
-
 ### Aws Solution Architecture
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1777245365/11335669-9e27-41c3-ba7e-2ea2d397a55c_zeh2wn.png)
 
-- API Gateway: Used as an entry point for the application. It receives client requests and forwards them to the corresponding services.
-- Elastic Load Balancing (ELB): Distributes incoming traffic among EC2 instances. Ensures high availability and scalability by directing traffic only to healthy instances.
-- EC2 Auto Scaling: Automatically scales the EC2 computing capacity based on demand. Ensures the correct number of EC2 instances are running to handle the current workload.
-- CloudWatch: Used to monitor the health and performance of the AWS infrastructure. Collects metrics, logs, and events that can be used to make informed decisions about the scalability and performance of the application.
+### About this Architecture
+- This architecture provides a highly scalable and resilient solution, capable of handling variable workloads and ensuring high availability. Additionally, the use of CloudWatch enables proactive monitoring of application health and performance, enabling informed decisions about infrastructure adjustments..
+
 
 ### DevSecOps CI/CD Pipeline com Blue/Green Deployment em AWS ECS
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1777246352/3d31efb7-900a-4045-a123-6c81d72268ea_chbug2.png)
-
-### About this Architecture
-- This architecture provides a highly scalable and resilient solution, capable of handling variable workloads and ensuring high availability. Additionally, the use of CloudWatch enables proactive monitoring of application health and performance, enabling informed decisions about infrastructure adjustments..
 
 ### 📊 Observability
 ![Captura de Tela 2019-05-12 às 15 18 49](https://res.cloudinary.com/duep7y7ve/image/upload/v1777239127/urk5tgbotg9bopujlsgc.png)
